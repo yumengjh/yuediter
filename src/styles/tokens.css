@@ -1,0 +1,73 @@
+:root {
+  /* Primary (蓝色系主色调) */
+  --app-primary: #1890ff;
+  --app-primary-hover: #40a9ff;
+  --app-primary-active: #096dd9;
+  --app-primary-light: #bae0ff;
+  --app-primary-border: #4096ff;
+  --app-primary-bg: #eff6ff;
+  --app-primary-text: #1d4ed8;
+  --app-primary-underline: #3b82f6;
+  --app-primary-glow: rgba(24, 144, 255, 0.2);
+
+  /* Border (灰色边框) */
+  --app-border: #e5e7eb;
+  --app-border-light: #e7e7e7;
+  --app-border-editor: #e7e9e8;
+  --app-border-lighter: #e8e8e8;
+  --app-border-strong: #d9d9d9;
+
+  /* Background (灰色背景) */
+  --app-bg-page: #f9fafb;
+  --app-bg-card: #ffffff;
+  --app-bg-elevated: #f5f5f5;
+  --app-bg-muted: #fafafa;
+  --app-bg-subtle: #f3f4f6;
+  --app-bg-hover: #f5f5f5;
+  --app-bg-inline-code: #0000000f;
+
+  /* Text (灰色文字) */
+  --app-text: #262626;
+  --app-text-strong: #1f2937;
+  --app-text-primary: #1f1f1f;
+  --app-text-secondary: #374151;
+  --app-text-tertiary: #595959;
+  --app-text-muted: #8c8c8c;
+  --app-text-disabled: #bfbfbf;
+  --app-text-icon: #2f2f2f;
+  --app-text-dropdown: #666666;
+  --app-text-placeholder: #bfbfbf;
+
+  /* Accent (强调色) */
+  --app-accent-green: #1fb46a;
+  --app-accent-yellow: #ffe58f;
+  --app-accent-active-bg: #111827;
+
+  /* Shadow (阴影) */
+  --app-shadow: rgba(0, 0, 0, 0.08);
+  --app-shadow-md: rgba(0, 0, 0, 0.15);
+  --app-shadow-lg: rgba(0, 0, 0, 0.2);
+  --app-shadow-glow: rgba(31, 178, 106, 0.25);
+
+  /* Dark Code Theme */
+  --app-code-dark-border: #2d333b;
+  --app-code-dark-bg: #22272e;
+  --app-code-dark-text: #adbac7;
+  --app-code-dark-label: #636e7b;
+
+  /* Toolbar (黑白灰极简) */
+  --toolbar-bg: #ffffff;
+  --toolbar-border: #e5e7eb;
+  --toolbar-text: #333333;
+  --toolbar-text-muted: #999999;
+  --toolbar-icon: #666666;
+  --toolbar-icon-hover: #333333;
+  --toolbar-hover-bg: #f5f5f5;
+  --toolbar-active-bg: #f0f0f0;
+  --toolbar-active-text: #111111;
+  --toolbar-active-border: #d9d9d9;
+  --toolbar-dropdown-arrow: #999999;
+  --toolbar-dropdown-arrow-hover: #666666;
+  --toolbar-check: #333333;
+  --toolbar-divider: #e8e8e8;
+}

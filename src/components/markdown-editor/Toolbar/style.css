@@ -1,0 +1,660 @@
+@keyframes toolbar-focus {
+  from {
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.15);
+  }
+  to {
+    box-shadow: 0 0 0 6px rgba(0, 0, 0, 0);
+  }
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  background: var(--toolbar-bg);
+  color: var(--toolbar-text);
+  gap: 0;
+  padding: 4px 12px;
+  margin: 0;
+  border-top: 1px solid var(--toolbar-border);
+  border-bottom: 1px solid var(--toolbar-border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.toolbar::-webkit-scrollbar {
+  display: none;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 4px;
+  border-right: 1px solid var(--toolbar-divider);
+  flex-shrink: 0;
+}
+
+.toolbar-group:last-of-type {
+  border-right: none;
+}
+
+.toolbar-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--toolbar-icon);
+  cursor: pointer;
+  font-size: 14px;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.toolbar-button.active {
+  background: var(--toolbar-active-bg);
+  color: var(--toolbar-active-text);
+}
+
+.align-dropdown .ant-dropdown-menu {
+  display: none;
+}
+
+.align-menu-panel {
+  padding: 6px;
+}
+
+.align-menu-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 6px;
+  background: var(--toolbar-bg);
+  border: 1px solid var(--toolbar-border);
+}
+
+.align-menu-btn {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: var(--toolbar-bg);
+  cursor: pointer;
+  color: var(--toolbar-icon);
+  line-height: 1;
+}
+
+.align-menu-btn:hover {
+  background: var(--toolbar-hover-bg);
+  color: var(--toolbar-icon-hover);
+}
+
+.align-menu-btn.is-active {
+  background: var(--toolbar-active-bg);
+  color: var(--toolbar-active-text);
+}
+
+.toolbar-button:hover {
+  background: var(--toolbar-hover-bg);
+  color: var(--toolbar-icon-hover);
+}
+
+.toolbar-button:active {
+  background: var(--toolbar-active-bg);
+}
+
+.toolbar-button:focus-visible {
+  outline: none;
+  animation: toolbar-focus 0.4s ease;
+}
+
+.dropdown-button {
+  padding-right: 6px;
+}
+
+.toolbar-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.caret {
+  font-size: 10px;
+  color: #7a7a7a;
+  margin-left: 2px;
+}
+
+.dropdown-trigger-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3px;
+  min-width: 56px;
+  height: 28px;
+  padding: 0 5px 0 7px;
+  background: var(--toolbar-bg);
+  border: none;
+  border-radius: 4px;
+  color: var(--toolbar-text);
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+  outline: none;
+  box-shadow: none;
+  box-sizing: border-box;
+}
+
+.dropdown-trigger-button:has(.heading-text) {
+  width: 72px;
+}
+
+.dropdown-trigger-button:hover {
+  background: var(--toolbar-hover-bg);
+}
+
+.dropdown-trigger-button:hover .dropdown-text {
+  color: var(--toolbar-icon-hover);
+}
+
+.dropdown-trigger-button:focus {
+  box-shadow: none;
+}
+
+.dropdown-trigger-button:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.dropdown-trigger-button:active {
+  background: var(--toolbar-active-bg);
+}
+
+.dropdown-trigger-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.dropdown-text {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  color: var(--toolbar-text);
+  font-size: 14px;
+  line-height: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.heading-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 8px;
+  min-width: 200px;
+}
+
+.heading-menu-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.heading-menu-check {
+  width: 16px;
+  display: inline-flex;
+  justify-content: center;
+  color: var(--toolbar-check);
+}
+
+.heading-menu-label {
+  font-weight: 600;
+  color: var(--toolbar-text);
+}
+
+.heading-menu-label.is-body {
+  font-size: 13px;
+}
+
+.heading-menu-label.is-h1 {
+  font-size: 18px;
+}
+
+.heading-menu-label.is-h2 {
+  font-size: 17px;
+}
+
+.heading-menu-label.is-h3 {
+  font-size: 16px;
+}
+
+.heading-menu-label.is-h4 {
+  font-size: 15px;
+}
+
+.heading-menu-label.is-h5 {
+  font-size: 14px;
+}
+
+.heading-menu-label.is-h6 {
+  font-size: 13px;
+}
+
+.heading-menu-shortcut {
+  font-size: 12px;
+  color: var(--app-text-disabled);
+  white-space: nowrap;
+}
+
+.font-size-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  min-width: 0;
+}
+
+.font-size-menu-check {
+  width: 14px;
+  display: inline-flex;
+  justify-content: center;
+  color: var(--toolbar-check);
+  flex-shrink: 0;
+}
+
+.font-size-menu-label {
+  font-size: 12px;
+  color: var(--toolbar-text);
+  white-space: nowrap;
+}
+
+.ant-dropdown .ant-dropdown-menu {
+  overflow-y: auto;
+  min-width: 108px;
+}
+
+/* Antd Dropdown 菜单样式覆盖 */
+.toolbar .ant-dropdown-menu {
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.toolbar .ant-dropdown-menu-item {
+  color: var(--toolbar-text);
+}
+
+.toolbar .ant-dropdown-menu-item:hover {
+  background: var(--toolbar-hover-bg);
+}
+
+.toolbar .ant-dropdown-menu-item-selected {
+  background: var(--toolbar-active-bg);
+  color: var(--toolbar-active-text);
+}
+
+.toolbar .ant-dropdown-menu-item-active {
+  background: var(--toolbar-hover-bg);
+  color: var(--toolbar-icon-hover);
+}
+
+/* Antd Tooltip 样式覆盖 */
+.toolbar .ant-tooltip-inner {
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+/* 工具栏按钮中的 antd 图标颜色 */
+.toolbar-button .anticon {
+  color: inherit;
+}
+
+.toolbar-button:hover .anticon {
+  color: var(--toolbar-icon-hover);
+}
+
+.toolbar-button.active .anticon {
+  color: var(--toolbar-active-text);
+}
+
+/* 下拉触发按钮中的 antd 图标颜色 */
+.dropdown-trigger-button .anticon {
+  color: inherit;
+}
+
+.dropdown-trigger-button:hover .anticon {
+  color: var(--toolbar-icon-hover);
+}
+
+/* 颜色选择器中的 antd 组件 */
+.color-picker-dropdown .ant-color-picker-trigger {
+  border-color: var(--toolbar-border);
+}
+
+.color-picker-dropdown .ant-color-picker-trigger:hover {
+  border-color: var(--toolbar-icon-hover);
+}
+
+/* 工具栏下拉菜单样式 */
+.toolbar-color-dropdown .ant-dropdown-menu,
+.toolbar-table-dropdown .ant-dropdown-menu {
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.toolbar-color-dropdown .ant-dropdown-menu-item,
+.toolbar-table-dropdown .ant-dropdown-menu-item {
+  color: var(--toolbar-text);
+}
+
+.toolbar-color-dropdown .ant-dropdown-menu-item:hover,
+.toolbar-table-dropdown .ant-dropdown-menu-item:hover {
+  background: var(--toolbar-hover-bg);
+}
+
+.toolbar-color-dropdown .ant-dropdown-menu-item-selected,
+.toolbar-table-dropdown .ant-dropdown-menu-item-selected {
+  background: var(--toolbar-active-bg);
+  color: var(--toolbar-active-text);
+}
+
+/* 工具栏中 antd 组件的选中状态 */
+.toolbar .ant-dropdown-menu-item-selected {
+  background: var(--toolbar-active-bg);
+  color: var(--toolbar-active-text);
+}
+
+.toolbar .ant-dropdown-menu-item-selected:hover {
+  background: var(--toolbar-hover-bg);
+}
+
+/* 工具栏中 antd 下拉菜单的箭头颜色 */
+.toolbar .ant-dropdown-trigger .anticon-down {
+  color: var(--toolbar-dropdown-arrow);
+}
+
+.toolbar .ant-dropdown-trigger:hover .anticon-down {
+  color: var(--toolbar-dropdown-arrow-hover);
+}
+
+.dropdown-caret {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--toolbar-dropdown-arrow);
+  transition: color 0.2s;
+  margin-left: 2px;
+}
+
+.dropdown-trigger-button:hover .dropdown-caret {
+  color: var(--toolbar-dropdown-arrow-hover);
+}
+
+.add-icon {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--app-accent-green);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.toolbar-icon {
+  width: 18px;
+  height: 18px;
+  stroke: var(--toolbar-icon);
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.text-label {
+  font-size: 14px;
+  color: var(--toolbar-text);
+}
+
+.dropdown-icon-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bg-color-icon,
+.text-color-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.color-icon-wrap {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  line-height: 1;
+}
+
+.color-icon-indicator {
+  display: block;
+  width: 14px;
+  height: 3px;
+  border-radius: 1px;
+  margin-top: 1px;
+}
+
+.color-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.color-sample {
+  width: 16px;
+  height: 2px;
+  background: #e15241;
+  border-radius: 999px;
+}
+
+.color-block {
+  width: 16px;
+  height: 10px;
+  background: #ffe17d;
+  border-radius: 3px;
+  border: 1px solid #e1c456;
+}
+
+.color-picker-dropdown {
+  width: 260px;
+  max-height: 480px;
+  padding: 8px;
+  background: var(--app-bg-card);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px var(--app-shadow-md);
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1000;
+}
+
+.color-picker-section {
+  margin-bottom: 8px;
+}
+
+.color-picker-section:last-of-type {
+  margin-bottom: 0;
+}
+
+.color-picker-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--toolbar-text);
+  font-weight: 500;
+}
+
+.color-picker-header-advanced {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0;
+}
+
+.color-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.color-grid-row {
+  display: flex;
+  gap: 3px;
+  flex-wrap: nowrap;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.color-swatch {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  min-height: 22px;
+  border-radius: 3px;
+  cursor: pointer;
+  border: 1px solid var(--app-border-light);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.color-swatch:has(.color-checkmark) {
+  border: 2px solid var(--app-primary);
+  box-shadow: 0 0 0 2px var(--app-primary-glow);
+}
+
+.color-swatch:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 4px var(--app-shadow-lg);
+  z-index: 1;
+}
+
+.color-swatch.selected {
+  border: 2px solid var(--app-primary);
+  box-shadow: 0 0 0 2px var(--app-primary-glow);
+}
+
+.color-checkmark {
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: bold;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+.gradient-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.gradient-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  cursor: pointer;
+  border: 1px solid var(--app-border-light);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+  flex-shrink: 0;
+}
+
+.gradient-swatch:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 4px var(--app-shadow-lg);
+  z-index: 1;
+}
+
+.color-picker-empty {
+  font-size: 12px;
+  color: var(--app-text-muted);
+  padding: 4px 0;
+}
+
+.color-picker-advanced {
+  display: flex;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.menu-check-mark {
+  color: var(--toolbar-check);
+}
+
+.dropdown-arrow {
+  font-size: 12px;
+  color: var(--toolbar-dropdown-arrow);
+}
+
+@media (max-width: 720px) {
+  .toolbar {
+    padding: 4px 6px;
+  }
+
+  .toolbar-group {
+    padding: 0 2px;
+  }
+
+  .toolbar-button {
+    min-width: 26px;
+    height: 26px;
+    padding: 0 4px;
+    font-size: 13px;
+  }
+
+  .dropdown-trigger-button {
+    min-width: 48px;
+    height: 26px;
+    padding: 0 4px 0 5px;
+    gap: 2px;
+    font-size: 13px;
+  }
+
+  .dropdown-trigger-button:has(.heading-text) {
+    width: 64px;
+  }
+}
