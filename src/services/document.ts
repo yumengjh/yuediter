@@ -140,11 +140,16 @@ export async function commitVersion(
 
 // ─── 块操作 ───
 
+const BATCH_SIZE = 100;
+
 async function batchOperations(
   docId: string,
   operations: BatchOperation[],
 ): Promise<void> {
-  await apiPost("/blocks/batch", { docId, operations });
+  for (let i = 0; i < operations.length; i += BATCH_SIZE) {
+    const chunk = operations.slice(i, i + BATCH_SIZE);
+    await apiPost("/blocks/batch", { docId, operations: chunk });
+  }
 }
 
 // ─── HTML↔块 桥接 ───
