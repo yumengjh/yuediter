@@ -801,7 +801,7 @@ export default function Toolbar() {
                       }}
                     />
                   ) : (
-                    <div className="ant-dropdown-menu" style={{ borderRadius: "6px", boxShadow: "0 4px 12px rgba(0,0,0,0.12)" }}>
+                    <div className="ant-dropdown-menu" style={{ borderRadius: "4px", border: "1px solid var(--app-border)", boxShadow: "none" }}>
                       {item.id === "text-mode" &&
                         titleLevelItems.map((levelItem) => {
                           const active = levelItem.key === getCurrentHeadingKey();
@@ -1136,7 +1136,7 @@ export default function Toolbar() {
                     align={{ offset: [0, 4] }}
                     overlayClassName="toolbar-color-dropdown"
                     dropdownRender={() => (
-                      <div className="ant-dropdown-menu" style={{ borderRadius: "6px", boxShadow: "0 4px 12px rgba(0,0,0,0.12)" }}>
+                      <div className="ant-dropdown-menu" style={{ borderRadius: "4px", border: "1px solid var(--app-border)", boxShadow: "none" }}>
                         <div
                           className={`ant-dropdown-menu-item ${lastIndentAction === "indent" ? "ant-dropdown-menu-item-selected" : ""}`}
                           onClick={() => {

@@ -1,12 +1,12 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
-  Space,
   Select,
   Button,
   Typography,
   Tag,
   Spin,
   Input,
+  Space,
   message,
   Tooltip,
 } from "antd";
@@ -15,8 +15,8 @@ import {
   PlusOutlined,
   CheckCircleOutlined,
   ExclamationCircleOutlined,
-  FileTextOutlined,
   LogoutOutlined,
+  FileTextOutlined,
 } from "@ant-design/icons";
 import { useDocument } from "../contexts/DocumentContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -36,6 +36,7 @@ export function DocumentHeader({ onSave }: DocumentHeaderProps) {
     lastSavedAt,
     selectDoc,
     createDoc,
+    updateDoc,
     refreshDocs,
   } = useDocument();
   const { user, logout } = useAuth();
@@ -43,9 +44,22 @@ export function DocumentHeader({ onSave }: DocumentHeaderProps) {
   const [creating, setCreating] = useState(false);
   const [showNewInput, setShowNewInput] = useState(false);
 
+  // 标题编辑
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleValue, setTitleValue] = useState("");
+  const [titleSaving, setTitleSaving] = useState(false);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     refreshDocs();
   }, [refreshDocs]);
+
+  useEffect(() => {
+    if (editingTitle && titleInputRef.current) {
+      titleInputRef.current.focus();
+      titleInputRef.current.select();
+    }
+  }, [editingTitle]);
 
   const handleDocChange = useCallback(
     async (docId: string) => {
@@ -73,20 +87,50 @@ export function DocumentHeader({ onSave }: DocumentHeaderProps) {
     }
   }, [newDocTitle, createDoc]);
 
+  const startEditTitle = useCallback(() => {
+    if (!currentDoc) return;
+    setTitleValue(currentDoc.title);
+    setEditingTitle(true);
+  }, [currentDoc]);
+
+  const cancelEditTitle = useCallback(() => {
+    setEditingTitle(false);
+    setTitleValue("");
+  }, []);
+
+  const saveTitle = useCallback(async () => {
+    if (!currentDoc) return;
+    const trimmed = titleValue.trim();
+    if (!trimmed || trimmed === currentDoc.title) {
+      cancelEditTitle();
+      return;
+    }
+    setTitleSaving(true);
+    try {
+      await updateDoc(currentDoc.docId, { title: trimmed });
+      setEditingTitle(false);
+      message.success("标题已更新");
+    } catch {
+      message.error("更新标题失败");
+    } finally {
+      setTitleSaving(false);
+    }
+  }, [currentDoc, titleValue, updateDoc, cancelEditTitle]);
+
   const saveStatusLabel = {
     idle: null,
     saving: (
       <Space size={4}>
         <Spin size="small" />
-        <Text type="secondary" style={{ fontSize: 12 }}>
+        <Text type="secondary" style={{ fontSize: 11 }}>
           保存中...
         </Text>
       </Space>
     ),
     saved: (
       <Space size={4}>
-        <CheckCircleOutlined style={{ color: "#52c41a", fontSize: 12 }} />
-        <Text type="secondary" style={{ fontSize: 12 }}>
+        <CheckCircleOutlined style={{ color: "#52c41a", fontSize: 11 }} />
+        <Text type="secondary" style={{ fontSize: 11 }}>
           {lastSavedAt
             ? `${lastSavedAt.getHours().toString().padStart(2, "0")}:${lastSavedAt
                 .getMinutes()
@@ -98,8 +142,8 @@ export function DocumentHeader({ onSave }: DocumentHeaderProps) {
     ),
     error: (
       <Space size={4}>
-        <ExclamationCircleOutlined style={{ color: "#ff4d4f", fontSize: 12 }} />
-        <Text type="danger" style={{ fontSize: 12 }}>
+        <ExclamationCircleOutlined style={{ color: "#ff4d4f", fontSize: 11 }} />
+        <Text type="danger" style={{ fontSize: 11 }}>
           保存失败
         </Text>
       </Space>
@@ -109,7 +153,6 @@ export function DocumentHeader({ onSave }: DocumentHeaderProps) {
   return (
     <div className="document-header">
       <div className="document-header-left">
-        <FileTextOutlined style={{ fontSize: 16, color: "#1677ff" }} />
         <Select
           className="document-header-select"
           placeholder="选择文档"
@@ -119,13 +162,13 @@ export function DocumentHeader({ onSave }: DocumentHeaderProps) {
             label: d.title,
             value: d.docId,
           }))}
-          style={{ minWidth: 180 }}
+          style={{ minWidth: 160 }}
           showSearch
           optionFilterProp="label"
           notFoundContent="暂无文档"
         />
         {showNewInput ? (
-          <Space.Compact style={{ marginLeft: 8 }}>
+          <div className="header-new-doc">
             <Input
               placeholder="文档标题"
               value={newDocTitle}
@@ -152,7 +195,7 @@ export function DocumentHeader({ onSave }: DocumentHeaderProps) {
             >
               取消
             </Button>
-          </Space.Compact>
+          </div>
         ) : (
           <Tooltip title="新建文档">
             <Button
@@ -162,6 +205,35 @@ export function DocumentHeader({ onSave }: DocumentHeaderProps) {
               onClick={() => setShowNewInput(true)}
             />
           </Tooltip>
+        )}
+      </div>
+
+      <div className="document-header-center">
+        {currentDoc && (
+          editingTitle ? (
+            <div className="title-edit-group">
+              <Input
+                ref={titleInputRef as any}
+                className="title-edit-input"
+                value={titleValue}
+                onChange={(e) => setTitleValue(e.target.value)}
+                onPressEnter={saveTitle}
+                onBlur={saveTitle}
+                disabled={titleSaving}
+                size="small"
+              />
+              {titleSaving && <Spin size="small" />}
+            </div>
+          ) : (
+            <button
+              className="title-display"
+              onClick={startEditTitle}
+              title="点击编辑标题"
+            >
+              <FileTextOutlined style={{ fontSize: 13, opacity: 0.5 }} />
+              <span>{currentDoc.title}</span>
+            </button>
+          )
         )}
       </div>
 

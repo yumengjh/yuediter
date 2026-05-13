@@ -1,8 +1,9 @@
 .table-picker {
   padding: 8px;
   background: var(--app-bg-card);
-  border-radius: 6px;
-  box-shadow: 0 4px 12px var(--app-shadow-md);
+  border-radius: 4px;
+  box-shadow: none;
+  border: 1px solid var(--app-border);
   user-select: none;
 }
 

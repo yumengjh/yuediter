@@ -14,7 +14,7 @@
   background: var(--toolbar-bg);
   color: var(--toolbar-text);
   gap: 0;
-  padding: 4px 12px;
+  padding: 6px 16px;
   margin: 0;
   border-top: 1px solid var(--toolbar-border);
   border-bottom: 1px solid var(--toolbar-border);
@@ -292,8 +292,9 @@
 
 /* Antd Dropdown 菜单样式覆盖 */
 .toolbar .ant-dropdown-menu {
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+  box-shadow: none;
+  border: 1px solid var(--app-border);
 }
 
 .toolbar .ant-dropdown-menu-item {
@@ -363,8 +364,9 @@
   width: 300px;
   padding: 12px;
   background: var(--app-bg-card);
-  border-radius: 6px;
-  box-shadow: 0 4px 12px var(--app-shadow-md);
+  border-radius: 4px;
+  box-shadow: none;
+  border: 1px solid var(--app-border);
   box-sizing: border-box;
 }
 
@@ -672,8 +674,9 @@
   max-height: 480px;
   padding: 8px;
   background: var(--app-bg-card);
-  border-radius: 6px;
-  box-shadow: 0 4px 12px var(--app-shadow-md);
+  border-radius: 4px;
+  box-shadow: none;
+  border: 1px solid var(--app-border);
   overflow-y: auto;
   overflow-x: hidden;
   box-sizing: border-box;
@@ -733,27 +736,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease;
+  transition: transform 0.15s ease;
   flex-shrink: 0;
   box-sizing: border-box;
 }
 
 .color-swatch:has(.color-checkmark) {
   border: 2px solid var(--app-primary);
-  box-shadow: 0 0 0 2px var(--app-primary-glow);
 }
 
 .color-swatch:hover {
   transform: scale(1.1);
-  box-shadow: 0 2px 4px var(--app-shadow-lg);
   z-index: 1;
 }
 
 .color-swatch.selected {
   border: 2px solid var(--app-primary);
-  box-shadow: 0 0 0 2px var(--app-primary-glow);
 }
 
 .color-checkmark {
@@ -775,15 +773,12 @@
   border-radius: 3px;
   cursor: pointer;
   border: 1px solid var(--app-border-light);
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease;
+  transition: transform 0.15s ease;
   flex-shrink: 0;
 }
 
 .gradient-swatch:hover {
   transform: scale(1.1);
-  box-shadow: 0 2px 4px var(--app-shadow-lg);
   z-index: 1;
 }
 

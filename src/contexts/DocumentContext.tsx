@@ -12,6 +12,7 @@ import {
   loadDocumentContent,
   saveDocumentContent,
   getDocument,
+  updateDocument as apiUpdateDoc,
   type Document,
 } from "../services/document";
 
@@ -28,6 +29,7 @@ interface DocumentContextValue {
   loadContent: (docId: string) => Promise<string>;
   saveDoc: (html: string) => Promise<void>;
   createDoc: (title: string) => Promise<Document>;
+  updateDoc: (docId: string, data: { title?: string; icon?: string }) => Promise<void>;
   refreshDocs: () => Promise<void>;
 }
 
@@ -112,6 +114,18 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
     [workspaceId],
   );
 
+  const updateDoc = useCallback(
+    async (docId: string, data: { title?: string; icon?: string }) => {
+      const updated = await apiUpdateDoc(docId, data);
+      setCurrentDoc(updated);
+      currentDocRef.current = updated;
+      setDocuments((prev) =>
+        prev.map((d) => (d.docId === docId ? updated : d)),
+      );
+    },
+    [],
+  );
+
   return (
     <DocumentContext.Provider
       value={{
@@ -125,6 +139,7 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
         loadContent,
         saveDoc,
         createDoc,
+        updateDoc,
         refreshDocs,
       }}
     >

@@ -12,6 +12,7 @@
   box-sizing: border-box;
   position: relative;
   background: var(--app-bg-card);
+  border-radius: 2px;
 }
 
 /* ---------- Card 层（工具栏 + 编辑器）---------- */
@@ -286,7 +287,6 @@
 
 .tiptap-editor pre.code-block-view.is-selected {
   border-color: var(--app-primary-border);
-  box-shadow: 0 0 0 1px var(--app-primary-border);
 }
 
 /* 行号列 */
@@ -545,8 +545,8 @@
   padding: 4px 8px;
   background: var(--app-bg-card, #fff);
   border: 1px solid var(--app-border-light, #e8e8e8);
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  box-shadow: none;
   z-index: 10;
 }
 
@@ -566,7 +566,6 @@
 
 .highlight-block-swatch.is-active {
   border-color: var(--app-primary, #1677ff);
-  box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.2);
 }
 
 .highlight-block-view .ProseMirror p,

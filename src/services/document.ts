@@ -124,6 +124,13 @@ export async function deleteDocument(docId: string): Promise<void> {
   return apiDelete(`/documents/${docId}`);
 }
 
+export async function updateDocument(
+  docId: string,
+  data: { title?: string; icon?: string; visibility?: string },
+): Promise<Document> {
+  return apiPatch<Document>(`/documents/${docId}`, data);
+}
+
 export async function commitVersion(
   docId: string,
   message?: string,

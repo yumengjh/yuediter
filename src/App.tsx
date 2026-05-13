@@ -247,6 +247,7 @@ function EditorContent() {
   const [activeTab, setActiveTab] = useState<OutputTab>("markdown");
   const [setupOpen, setSetupOpen] = useState(false);
   const [loadingDoc, setLoadingDoc] = useState(false);
+  const [outputModalOpen, setOutputModalOpen] = useState(false);
   // 追踪已加载的文档 ID，避免重复加载
   const loadedDocIdRef = useRef<string | null>(null);
 
@@ -324,32 +325,59 @@ function EditorContent() {
             />
           </div>
 
-          <div className="output-card" style={{ marginTop: 24 }}>
-            <div className="output-tab-bar">
-              <button
-                className={`output-tab ${activeTab === "markdown" ? "output-tab--active" : "output-tab--inactive"}`}
-                onClick={() => setActiveTab("markdown")}
-              >
-                Markdown
-              </button>
-              <button
-                className={`output-tab ${activeTab === "html" ? "output-tab--active" : "output-tab--inactive"}`}
-                onClick={() => setActiveTab("html")}
-              >
-                HTML
-              </button>
-              <div style={{ flex: 1 }} />
-              <button
-                className="copy-button"
-                onClick={() => {
-                  navigator.clipboard.writeText(outputContent);
-                }}
-              >
-                {copyLabel}
-              </button>
+          {/* 输出按钮 - 右上角 */}
+          <button
+            className="output-trigger-btn"
+            onClick={() => setOutputModalOpen(true)}
+            title="查看 HTML / Markdown"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="16 18 22 12 16 6" />
+              <polyline points="8 6 2 12 8 18" />
+            </svg>
+            <span>输出</span>
+          </button>
+
+          {/* 输出弹窗 */}
+          {outputModalOpen && (
+            <div className="output-modal-overlay" onClick={() => setOutputModalOpen(false)}>
+              <div className="output-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="output-modal-header">
+                  <div className="output-tab-bar">
+                    <button
+                      className={`output-tab ${activeTab === "markdown" ? "output-tab--active" : "output-tab--inactive"}`}
+                      onClick={() => setActiveTab("markdown")}
+                    >
+                      Markdown
+                    </button>
+                    <button
+                      className={`output-tab ${activeTab === "html" ? "output-tab--active" : "output-tab--inactive"}`}
+                      onClick={() => setActiveTab("html")}
+                    >
+                      HTML
+                    </button>
+                  </div>
+                  <div className="output-modal-actions">
+                    <button
+                      className="copy-button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(outputContent);
+                      }}
+                    >
+                      {copyLabel}
+                    </button>
+                    <button
+                      className="output-modal-close"
+                      onClick={() => setOutputModalOpen(false)}
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+                <pre className="output-pre">{outputContent}</pre>
+              </div>
             </div>
-            <pre className="output-pre">{outputContent}</pre>
-          </div>
+          )}
         </>
       )}
     </>

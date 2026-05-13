@@ -1,24 +1,80 @@
+/* 顶部状态栏 — 全宽沉浸式 */
 .document-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 16px;
-  background: #fff;
-  border-bottom: 1px solid #f0f0f0;
-  border-radius: 8px 8px 0 0;
-  margin-bottom: 0;
+  padding: 0 16px;
+  height: 40px;
+  background: var(--app-bg-page);
+  margin: 0;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  gap: 12px;
 }
 
 .document-header-left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.header-new-doc {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.document-header-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.title-display {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border: none;
+  background: transparent;
+  color: var(--app-text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background 0.15s;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.title-display:hover {
+  background: var(--app-bg-subtle);
+}
+
+.title-edit-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.title-edit-input {
+  font-size: 13px;
+  font-weight: 500;
+  max-width: 320px;
 }
 
 .document-header-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .document-header-select .ant-select-selector {
@@ -26,8 +82,12 @@
   box-shadow: none !important;
   background: transparent !important;
   font-weight: 500;
+  font-size: 13px;
 }
 
 .document-header-user {
   cursor: default;
+  font-size: 11px;
+  line-height: 18px;
+  margin: 0;
 }
