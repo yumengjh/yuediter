@@ -223,21 +223,23 @@ type OutputTab = "html" | "markdown";
 
 // ─── 编辑器主内容区 ───
 
-const DEFAULT_CONTENT = `<h2>欢迎使用 Markdown Editor</h2>
-<p>这是一个 <strong>可复用的富文本编辑器组件</strong>，基于 TipTap 构建，支持：</p>
+const DEFAULT_CONTENT = `<h2>欢迎使用 Markdown 增强型富文本编辑器</h2>
+<p>这是一款 <strong>所见即所得</strong> 的现代化编辑器，基于 TipTap 构建，融合 Markdown 简洁性与富文本强大能力，支持所有常用排版与内容格式：</p>
 <ul>
-  <li>标题（H1-H6）</li>
-  <li><strong>加粗</strong>、<em>斜体</em>、<u>下划线</u>、<s>删除线</s></li>
-  <li>有序列表和无序列表</li>
-  <li>代码块（带语法高亮）</li>
-  <li>引用块</li>
-  <li>链接和待办列表</li>
+  <li>六级标题（H1 - H6）自动排版与目录结构</li>
+  <li>加粗、斜体、下划线、删除线、字体颜色、背景高亮</li>
+  <li>有序列表 / 无序列表（支持多前缀样式）</li>
+  <li>待办事项清单、段落对齐、行高、缩进调整</li>
+  <li>代码块 / 行内代码（支持主流编程语言语法高亮）</li>
+  <li>引用块、高亮提示块、分割线、表格、链接、图片</li>
+  <li>撤销 / 重做、清除格式、格式刷一键复用样式</li>
 </ul>
-<blockquote><p>试试在工具栏中探索各种格式化功能！</p></blockquote>
-<pre><code class="language-typescript">const greeting = "Hello, World!";
-console.log(greeting);
+<blockquote><p>无需记忆复杂语法，点击工具栏即可完成专业排版，适用于笔记、文档、技术文章、报告等多种场景。</p></blockquote>
+<pre><code class="language-typescript">// 快速体验：选中文字 → 使用工具栏格式化
+const editor = "现代化富文本编辑器";
+console.log("欢迎使用", editor);
 </code></pre>
-<p>开始编辑吧 ↓</p>`;
+<p>开始你的创作吧 ↓</p>`;
 
 function EditorContent() {
   const { isAuthenticated: authed } = useAuth();
