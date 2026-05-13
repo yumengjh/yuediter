@@ -66,6 +66,23 @@ export interface MarkdownEditorProps {
   minHeight?: string;
   /** 自动聚焦 */
   autofocus?: boolean | "start" | "end";
+  /** 内容加载状态 */
+  loading?: boolean;
+}
+
+function EditorSkeleton() {
+  return (
+    <div className="skeleton-container" style={{ margin: 0, boxShadow: "none", width: "100%" }}>
+      <div className="skeleton-item skeleton-title" />
+      <div className="skeleton-item skeleton-text" />
+      <div className="skeleton-item skeleton-text-mid" />
+      <div className="skeleton-item skeleton-text" />
+      <div className="skeleton-item skeleton-text-short" />
+      <div className="skeleton-item skeleton-text" style={{ marginTop: 40 }} />
+      <div className="skeleton-item skeleton-text-mid" />
+      <div className="skeleton-item skeleton-text" />
+    </div>
+  );
 }
 
 export default function MarkdownEditor({
@@ -81,6 +98,7 @@ export default function MarkdownEditor({
   style,
   minHeight = "460px",
   autofocus = false,
+  loading = false,
 }: MarkdownEditorProps) {
   const [themeMode, setThemeMode] = useState<CodeThemeMode>("light");
   const [shikiHighlighter, setShikiHighlighter] = useState<ShikiHighlighter | null>(null);
@@ -283,7 +301,12 @@ export default function MarkdownEditor({
   if (!editor || !shikiReady) {
     return (
       <div className="tiptap-shell" style={style}>
-        <div className="tiptap-card">正在初始化编辑器与代码高亮…</div>
+        <div className="tiptap-card" style={{ position: "relative", minHeight }}>
+          <div className="editor-init-mask">
+            <div className="init-loader" />
+            <div className="init-text">正在初始化编辑器与高亮引擎...</div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -293,8 +316,12 @@ export default function MarkdownEditor({
       <div className="tiptap-card" data-code-theme={themeMode}>
         <EditorContextProvider value={{ editor }}>
           {showToolbar && <Toolbar />}
-          <div className="tiptap-editor-wrapper" style={{ minHeight }}>
-            <EditorContent editor={editor} />
+          <div className="tiptap-editor-wrapper" style={{ minHeight, position: "relative" }}>
+            {loading ? (
+              <EditorSkeleton />
+            ) : (
+              <EditorContent editor={editor} />
+            )}
           </div>
           {showTOC && <TableOfContents onClose={() => onTOCToggle?.(false)} />}
         </EditorContextProvider>

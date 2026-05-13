@@ -241,6 +241,7 @@ console.log("欢迎使用", editor);
 </code></pre>
 <p>开始你的创作吧 ↓</p>`;
 
+
 function EditorContent() {
   const { isAuthenticated: authed } = useAuth();
   const { currentDoc, loadContent, saveDoc, workspaceId, setWorkspace } =
@@ -325,12 +326,12 @@ function EditorContent() {
           />
           <div className="output-card">
             <MarkdownEditor
-              key={currentDoc?.docId || "default"}
               content={html}
               onChange={setHtml}
               placeholder="开始记录你的知识吧…"
               showTOC={showTOC}
               onTOCToggle={setShowTOC}
+              loading={loadingDoc}
             />
           </div>
 
