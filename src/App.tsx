@@ -250,6 +250,7 @@ function EditorContent() {
   const [setupOpen, setSetupOpen] = useState(false);
   const [loadingDoc, setLoadingDoc] = useState(false);
   const [outputModalOpen, setOutputModalOpen] = useState(false);
+  const [showTOC, setShowTOC] = useState(false);
   // 追踪已加载的文档 ID，避免重复加载
   const loadedDocIdRef = useRef<string | null>(null);
 
@@ -317,13 +318,19 @@ function EditorContent() {
 
       {authed && workspaceId && (
         <>
-          <DocumentHeader onSave={handleManualSave} />
+          <DocumentHeader 
+            onSave={handleManualSave} 
+            showTOC={showTOC} 
+            onToggleTOC={setShowTOC} 
+          />
           <div className="output-card">
             <MarkdownEditor
               key={currentDoc?.docId || "default"}
               content={html}
               onChange={setHtml}
               placeholder="开始记录你的知识吧…"
+              showTOC={showTOC}
+              onTOCToggle={setShowTOC}
             />
           </div>
 

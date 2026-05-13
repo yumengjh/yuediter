@@ -38,6 +38,7 @@ import { Indent } from "./extensions/indent";
 import TaskItemView from "./TaskItemView";
 import { EditorContextProvider } from "./EditorContext";
 import Toolbar from "./Toolbar";
+import TableOfContents from "./TableOfContents";
 import "./styles/editor.css";
 
 export interface MarkdownEditorProps {
@@ -53,6 +54,10 @@ export interface MarkdownEditorProps {
   theme?: "light" | "dark";
   /** 是否显示工具栏，默认 true */
   showToolbar?: boolean;
+  /** 是否显示目录，默认 false */
+  showTOC?: boolean;
+  /** 目录开关回调 */
+  onTOCToggle?: (open: boolean) => void;
   /** 自定义类名 */
   className?: string;
   /** 自定义样式 */
@@ -70,6 +75,8 @@ export default function MarkdownEditor({
   placeholder = "开始记录你的知识吧…",
   theme: themeProp,
   showToolbar = true,
+  showTOC = false,
+  onTOCToggle,
   className,
   style,
   minHeight = "460px",
@@ -289,6 +296,7 @@ export default function MarkdownEditor({
           <div className="tiptap-editor-wrapper" style={{ minHeight }}>
             <EditorContent editor={editor} />
           </div>
+          {showTOC && <TableOfContents onClose={() => onTOCToggle?.(false)} />}
         </EditorContextProvider>
       </div>
     </div>

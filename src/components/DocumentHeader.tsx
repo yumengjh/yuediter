@@ -17,6 +17,7 @@ import {
   ExclamationCircleOutlined,
   LogoutOutlined,
   FileTextOutlined,
+  UnorderedListOutlined,
 } from "@ant-design/icons";
 import { useDocument } from "../contexts/DocumentContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -26,9 +27,11 @@ const { Text } = Typography;
 
 interface DocumentHeaderProps {
   onSave: () => void;
+  showTOC: boolean;
+  onToggleTOC: (open: boolean) => void;
 }
 
-export function DocumentHeader({ onSave }: DocumentHeaderProps) {
+export function DocumentHeader({ onSave, showTOC, onToggleTOC }: DocumentHeaderProps) {
   const {
     currentDoc,
     documents,
@@ -239,6 +242,14 @@ export function DocumentHeader({ onSave }: DocumentHeaderProps) {
 
       <div className="document-header-right">
         {saveStatusLabel[saveStatus]}
+        <Tooltip title={showTOC ? "隐藏目录" : "显示目录"}>
+          <Button
+            type={showTOC ? "primary" : "text"}
+            icon={<UnorderedListOutlined />}
+            size="small"
+            onClick={() => onToggleTOC(!showTOC)}
+          />
+        </Tooltip>
         <Tooltip title="手动保存">
           <Button
             type="text"
