@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import type { ReactNode } from "react";
 import { Dropdown, Tooltip, message, Input, Modal, Space, ColorPicker, Divider } from "antd";
 import type { Editor } from "@tiptap/react";
+import type { Selection } from "prosemirror-state";
 import {
   UndoOutlined,
   RedoOutlined,
@@ -37,6 +38,13 @@ import {
 import TablePicker from "./TablePicker";
 import "./style.css";
 
+type ToolbarItem = {
+  id: string;
+  label: string;
+  content: ReactNode;
+  type?: "dropdown" | "color-picker" | "table-picker";
+};
+
 function QuoteIcon() {
   return (
     <svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -44,13 +52,6 @@ function QuoteIcon() {
     </svg>
   );
 }
-
-type ToolbarItem = {
-  id: string;
-  label: string;
-  content: ReactNode;
-  type?: "dropdown" | "color-picker" | "table-picker";
-};
 
 export default function Toolbar() {
   const editor = useMarkdownEditor();
@@ -61,8 +62,7 @@ export default function Toolbar() {
   const tiptap = editor as Editor | null;
   const editorReady = Boolean(tiptap);
   const [, forceUpdate] = useState(0);
-  const colorSelectTimeoutRef = useRef<number | null>(null);
-  const bgColorSelectTimeoutRef = useRef<number | null>(null);
+  const savedSelectionRef = useRef<Selection | null>(null);
   const [tooltipOpen, setTooltipOpen] = useState<Record<string, boolean>>({});
   const [tablePickerOpen, setTablePickerOpen] = useState(false);
 
@@ -238,16 +238,14 @@ export default function Toolbar() {
   const handleColorSelect = useCallback(
     (color: string) => {
       if (!tiptap) return;
-
       setSelectedColor(color);
-
-      if (colorSelectTimeoutRef.current) {
-        clearTimeout(colorSelectTimeoutRef.current);
+      const { view } = tiptap;
+      if (savedSelectionRef.current) {
+        const sel = savedSelectionRef.current;
+        view.dispatch(view.state.tr.setSelection(sel));
       }
-
-      colorSelectTimeoutRef.current = window.setTimeout(() => {
-        tiptap.chain().focus().setColor(color).run();
-      }, 300);
+      view.focus();
+      tiptap.chain().setColor(color).run();
     },
     [tiptap],
   );
@@ -255,30 +253,17 @@ export default function Toolbar() {
   const handleBgColorSelect = useCallback(
     (color: string) => {
       if (!tiptap) return;
-
       setSelectedBgColor(color);
-
-      if (bgColorSelectTimeoutRef.current) {
-        clearTimeout(bgColorSelectTimeoutRef.current);
+      const { view } = tiptap;
+      if (savedSelectionRef.current) {
+        const sel = savedSelectionRef.current;
+        view.dispatch(view.state.tr.setSelection(sel));
       }
-
-      bgColorSelectTimeoutRef.current = window.setTimeout(() => {
-        tiptap.chain().focus().toggleHighlight({ color }).run();
-      }, 300);
+      view.focus();
+      tiptap.chain().toggleHighlight({ color }).run();
     },
     [tiptap],
   );
-
-  useEffect(() => {
-    return () => {
-      if (colorSelectTimeoutRef.current !== null) {
-        window.clearTimeout(colorSelectTimeoutRef.current);
-      }
-      if (bgColorSelectTimeoutRef.current !== null) {
-        window.clearTimeout(bgColorSelectTimeoutRef.current);
-      }
-    };
-  }, []);
 
   const handleGradientSelect = (gradientId: string) => {
     message.info(`渐变色选择功能暂未实现。选择的渐变: ${gradientId}`);
@@ -649,33 +634,58 @@ export default function Toolbar() {
                   </button>
                 </Dropdown>
               </Tooltip>
-            ) : item.type === "color-picker" ? (
-              <Tooltip
-                key={item.id}
-                placement="bottom"
-                title={item.label}
-                trigger="hover"
-                mouseEnterDelay={0.5}
-                open={tooltipOpen[item.id]}
-                onOpenChange={(open) => {
-                  setTooltipOpen((prev) => ({ ...prev, [item.id]: open }));
-                }}
-              >
-                <Dropdown
-                  placement="bottomLeft"
-                  align={{ offset: [0, 4] }}
-                  overlayClassName="toolbar-color-dropdown"
-                  onOpenChange={(open) => {
-                    if (open) {
-                      setTooltipOpen((prev) => ({ ...prev, [item.id]: false }));
-                    }
-                  }}
-                  dropdownRender={() => {
-                    const isBgColor = item.id === "bg-color";
-                    const currentColor = isBgColor ? selectedBgColor : selectedColor;
-                    const handleSelect = isBgColor ? handleBgColorSelect : handleColorSelect;
-
-                    return (
+            ) : item.type === "color-picker" ? (() => {
+              const isBgColor = item.id === "bg-color";
+              const currentColor = isBgColor ? selectedBgColor : selectedColor;
+              const handleSelect = isBgColor ? handleBgColorSelect : handleColorSelect;
+              return (
+                <div className="split-color-button" key={item.id}>
+                  <Tooltip title={item.label} trigger="hover" mouseEnterDelay={0.5}>
+                    <button
+                      type="button"
+                      className="toolbar-button color-apply-btn"
+                      disabled={!editorReady}
+                      aria-label={item.label}
+                      onMouseDown={() => {
+                        if (tiptap) {
+                          savedSelectionRef.current = tiptap.state.selection;
+                        }
+                      }}
+                      onClick={() => {
+                        if (!tiptap) return;
+                        const { view } = tiptap;
+                        const color = currentColor;
+                        if (savedSelectionRef.current) {
+                          view.dispatch(view.state.tr.setSelection(savedSelectionRef.current));
+                        }
+                        view.focus();
+                        if (isBgColor) {
+                          setSelectedBgColor(color);
+                          tiptap.chain().toggleHighlight({ color }).run();
+                        } else {
+                          setSelectedColor(color);
+                          tiptap.chain().setColor(color).run();
+                        }
+                      }}
+                    >
+                      <span className="color-icon-wrap">
+                        {isBgColor ? <BgColorsOutlined /> : <EditOutlined />}
+                        <span className="color-icon-indicator" style={{ backgroundColor: currentColor }} />
+                      </span>
+                    </button>
+                  </Tooltip>
+                  <Dropdown
+                    placement="bottomLeft"
+                    align={{ offset: [0, 4] }}
+                    overlayClassName="toolbar-color-dropdown"
+                    onOpenChange={(open) => {
+                      if (open) {
+                        if (tiptap) {
+                          savedSelectionRef.current = tiptap.state.selection;
+                        }
+                      }
+                    }}
+                    dropdownRender={() => (
                       <div className="color-picker-dropdown">
                         <div className="color-picker-section">
                           <div className="color-picker-header">
@@ -740,11 +750,6 @@ export default function Toolbar() {
                                 value={currentColor}
                                 onChange={(color) => {
                                   const hexColor = color.toHexString();
-                                  if (isBgColor) {
-                                    setSelectedBgColor(hexColor);
-                                  } else {
-                                    setSelectedColor(hexColor);
-                                  }
                                   handleSelect(hexColor);
                                 }}
                                 showText
@@ -760,28 +765,22 @@ export default function Toolbar() {
                           </div>
                         </div>
                       </div>
-                    );
-                  }}
-                  trigger={["click"]}
-                  disabled={!editorReady}
-                >
-                  <button
-                    type="button"
-                    className="dropdown-trigger-button"
+                    )}
+                    trigger={["click"]}
                     disabled={!editorReady}
-                    aria-label={item.label}
-                    onClick={() => {
-                      setTooltipOpen((prev) => ({ ...prev, [item.id]: false }));
-                    }}
                   >
-                    <span className="dropdown-text">{item.content}</span>
-                    <span className="dropdown-caret">
-                      <DownOutlined className="dropdown-arrow" />
-                    </span>
-                  </button>
-                </Dropdown>
-              </Tooltip>
-            ) : item.type === "table-picker" ? (
+                    <button
+                      type="button"
+                      className="color-dropdown-trigger"
+                      disabled={!editorReady}
+                      aria-label={`${item.label} - 选择颜色`}
+                    >
+                      <DownOutlined className="color-dropdown-arrow" />
+                    </button>
+                  </Dropdown>
+                </div>
+              );
+            })() : item.type === "table-picker" ? (
               <Tooltip
                 key={item.id}
                 placement="bottom"

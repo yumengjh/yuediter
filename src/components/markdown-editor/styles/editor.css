@@ -79,6 +79,16 @@
 /* =====================================================
    编辑器正文区域 — 严格还原语雀
    ===================================================== */
+.tiptap-editor ::selection,
+.tiptap-editor *::selection {
+  background: #d1ecf9;
+}
+
+.tiptap-editor ::-moz-selection,
+.tiptap-editor *::-moz-selection {
+  background: #d1ecf9;
+}
+
 .tiptap-editor {
   outline: none;
   min-height: 460px;
