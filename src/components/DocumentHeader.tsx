@@ -18,6 +18,10 @@ import {
   LogoutOutlined,
   FileTextOutlined,
   UnorderedListOutlined,
+  SendOutlined,
+  LockOutlined,
+  TeamOutlined,
+  GlobalOutlined,
 } from "@ant-design/icons";
 import { useDocument } from "../contexts/DocumentContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -40,6 +44,7 @@ export function DocumentHeader({ onSave, showTOC, onToggleTOC }: DocumentHeaderP
     selectDoc,
     createDoc,
     updateDoc,
+    publishDoc,
     refreshDocs,
   } = useDocument();
   const { user, logout } = useAuth();
@@ -52,6 +57,8 @@ export function DocumentHeader({ onSave, showTOC, onToggleTOC }: DocumentHeaderP
   const [titleValue, setTitleValue] = useState("");
   const [titleSaving, setTitleSaving] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const [publishing, setPublishing] = useState(false);
+  const [visibilityChanging, setVisibilityChanging] = useState(false);
 
   useEffect(() => {
     refreshDocs();
@@ -119,6 +126,34 @@ export function DocumentHeader({ onSave, showTOC, onToggleTOC }: DocumentHeaderP
       setTitleSaving(false);
     }
   }, [currentDoc, titleValue, updateDoc, cancelEditTitle]);
+
+  const handleVisibilityChange = useCallback(
+    async (value: string) => {
+      if (!currentDoc) return;
+      setVisibilityChanging(true);
+      try {
+        await updateDoc(currentDoc.docId, { visibility: value });
+      } catch {
+        message.error("修改可见性失败");
+      } finally {
+        setVisibilityChanging(false);
+      }
+    },
+    [currentDoc, updateDoc],
+  );
+
+  const handlePublish = useCallback(async () => {
+    if (!currentDoc) return;
+    setPublishing(true);
+    try {
+      await publishDoc(currentDoc.docId);
+      message.success("发布成功");
+    } catch {
+      message.error("发布失败");
+    } finally {
+      setPublishing(false);
+    }
+  }, [currentDoc, publishDoc]);
 
   const saveStatusLabel = {
     idle: null,
@@ -241,6 +276,39 @@ export function DocumentHeader({ onSave, showTOC, onToggleTOC }: DocumentHeaderP
       </div>
 
       <div className="document-header-right">
+        {currentDoc && (
+          <>
+            <Select
+              size="small"
+              value={currentDoc.visibility || "private"}
+              onChange={handleVisibilityChange}
+              loading={visibilityChanging}
+              style={{ width: 100 }}
+              options={[
+                { value: "private", label: <Space size={4}><LockOutlined />私有</Space> },
+                { value: "workspace", label: <Space size={4}><TeamOutlined />工作空间</Space> },
+                { value: "public", label: <Space size={4}><GlobalOutlined />公开</Space> },
+              ]}
+              popupMatchSelectWidth={false}
+            />
+            {currentDoc.publishedHead ? (
+              <Text type="secondary" style={{ fontSize: 11, whiteSpace: "nowrap" }}>
+                已发布 v{currentDoc.publishedHead}
+              </Text>
+            ) : null}
+            <Tooltip title="发布（设为公开）">
+              <Button
+                type="primary"
+                icon={<SendOutlined />}
+                size="small"
+                loading={publishing}
+                onClick={handlePublish}
+              >
+                发布
+              </Button>
+            </Tooltip>
+          </>
+        )}
         {saveStatusLabel[saveStatus]}
         <Tooltip title={showTOC ? "隐藏目录" : "显示目录"}>
           <Button

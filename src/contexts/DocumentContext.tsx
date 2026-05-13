@@ -13,6 +13,7 @@ import {
   saveDocumentContent,
   getDocument,
   updateDocument as apiUpdateDoc,
+  publishDocument as apiPublishDoc,
   type Document,
 } from "../services/document";
 
@@ -29,7 +30,8 @@ interface DocumentContextValue {
   loadContent: (docId: string) => Promise<string>;
   saveDoc: (html: string) => Promise<void>;
   createDoc: (title: string) => Promise<Document>;
-  updateDoc: (docId: string, data: { title?: string; icon?: string }) => Promise<void>;
+  updateDoc: (docId: string, data: { title?: string; icon?: string; visibility?: string }) => Promise<void>;
+  publishDoc: (docId: string) => Promise<void>;
   refreshDocs: () => Promise<void>;
 }
 
@@ -115,8 +117,20 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
   );
 
   const updateDoc = useCallback(
-    async (docId: string, data: { title?: string; icon?: string }) => {
+    async (docId: string, data: { title?: string; icon?: string; visibility?: string }) => {
       const updated = await apiUpdateDoc(docId, data);
+      setCurrentDoc(updated);
+      currentDocRef.current = updated;
+      setDocuments((prev) =>
+        prev.map((d) => (d.docId === docId ? updated : d)),
+      );
+    },
+    [],
+  );
+
+  const publishDoc = useCallback(
+    async (docId: string) => {
+      const updated = await apiPublishDoc(docId);
       setCurrentDoc(updated);
       currentDocRef.current = updated;
       setDocuments((prev) =>
@@ -140,6 +154,7 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
         saveDoc,
         createDoc,
         updateDoc,
+        publishDoc,
         refreshDocs,
       }}
     >

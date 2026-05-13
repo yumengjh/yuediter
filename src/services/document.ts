@@ -138,6 +138,12 @@ export async function commitVersion(
   await apiPost(`/documents/${docId}/commit`, { message });
 }
 
+export async function publishDocument(
+  docId: string,
+): Promise<Document> {
+  return apiPost<Document>(`/documents/${docId}/publish`);
+}
+
 // ─── 块操作 ───
 
 const BATCH_SIZE = 100;
