@@ -46,16 +46,69 @@ export const codeLanguageItems = [
 }));
 
 export const orderedListTypeItems = [
-  { key: "decimal", label: "1. 2. 3.", description: "数字" },
-  { key: "lower-alpha", label: "a. b. c.", description: "小写字母" },
-  { key: "upper-alpha", label: "A. B. C.", description: "大写字母" },
-  { key: "lower-roman", label: "i. ii. iii.", description: "小写罗马数字" },
-  { key: "upper-roman", label: "I. II. III.", description: "大写罗马数字" },
+  { key: "decimal", label: "1", description: "数字" },
+  { key: "lower-alpha", label: "a", description: "小写字母" },
+  { key: "upper-alpha", label: "A", description: "大写字母" },
+  { key: "lower-roman", label: "i", description: "小写罗马数字" },
+  { key: "upper-roman", label: "II", description: "大写罗马数字" },
 ].map((item) => ({
   key: item.key,
   label: item.label,
   description: item.description,
 }));
+
+export const lineHeightItems = [
+  { key: "", label: "默认" },
+  { key: "1", label: "1" },
+  { key: "1.15", label: "1.15" },
+  { key: "1.5", label: "1.5" },
+  { key: "2", label: "2" },
+  { key: "2.5", label: "2.5" },
+  { key: "3", label: "3" },
+].map((item) => ({
+  key: item.key,
+  label: item.label,
+}));
+
+export const highlightBlockColors = [
+  "#FFF2CC",
+  "#FCE5CD",
+  "#F4CCCC",
+  "#E6B8AF",
+  "#D9EAD3",
+  "#D0E0E3",
+  "#C9DAF8",
+  "#CFE2F3",
+  "#D9D2E9",
+  "#EAD1DC",
+];
+
+export const defaultHighlightBlockColor = "#FFF2CC";
+
+export const highlightBlockColorTypeMap: Record<string, string> = {
+  "#FFF2CC": "tip",
+  "#FCE5CD": "warning",
+  "#F4CCCC": "danger",
+  "#E6B8AF": "caution",
+  "#D9EAD3": "success",
+  "#D0E0E3": "info",
+  "#C9DAF8": "note",
+  "#CFE2F3": "question",
+  "#D9D2E9": "example",
+  "#EAD1DC": "quote",
+};
+
+export const highlightBlockTypeColorMap: Record<string, string> = Object.fromEntries(
+  Object.entries(highlightBlockColorTypeMap).map(([color, type]) => [type, color]),
+);
+
+export function getColorByType(type: string): string {
+  return highlightBlockTypeColorMap[type] || defaultHighlightBlockColor;
+}
+
+export function getTypeByColor(color: string): string {
+  return highlightBlockColorTypeMap[color] || "tip";
+}
 
 export const defaultColor = "#000000";
 

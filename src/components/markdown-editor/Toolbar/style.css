@@ -358,6 +358,48 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
+/* 链接选择器弹出框 */
+.link-picker-popup {
+  width: 300px;
+  padding: 12px;
+  background: var(--app-bg-card);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px var(--app-shadow-md);
+  box-sizing: border-box;
+}
+
+.link-picker-title {
+  color: var(--app-primary);
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.link-picker-field {
+  margin-bottom: 10px;
+}
+
+.link-picker-field:last-of-type {
+  margin-bottom: 0;
+}
+
+.link-picker-label {
+  display: block;
+  font-size: 12px;
+  color: var(--app-text-secondary);
+  margin-bottom: 4px;
+}
+
+.link-picker-popup .ant-input {
+  font-size: 13px;
+}
+
+.link-picker-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
 .toolbar-color-dropdown .ant-dropdown-menu-item,
 .toolbar-table-dropdown .ant-dropdown-menu-item {
   color: var(--toolbar-text);
@@ -506,6 +548,102 @@
 
 .split-color-button .color-dropdown-arrow {
   font-size: 9px;
+}
+
+/* =====================================================
+   SplitDropdown — 通用左右分栏下拉按钮
+   ===================================================== */
+.split-dropdown {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 4px;
+  background: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.split-dropdown:hover {
+  background: var(--toolbar-hover-bg);
+}
+
+.split-dropdown.is-active {
+  background: var(--toolbar-active-bg);
+}
+
+.split-dropdown-main {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  background: transparent;
+  border: none;
+  border-radius: 4px 0 0 4px;
+  color: var(--toolbar-icon);
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.split-dropdown-main:hover {
+  background: var(--toolbar-hover-bg);
+  color: var(--toolbar-icon-hover);
+}
+
+.split-dropdown-main.active {
+  background: var(--toolbar-active-bg);
+  color: var(--toolbar-active-text);
+}
+
+.split-dropdown-main:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.split-dropdown-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.split-dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: 0 4px 4px 0;
+  color: var(--toolbar-icon);
+  cursor: pointer;
+  font-size: 10px;
+  padding: 0;
+  transition: background-color 0.15s ease;
+}
+
+.split-dropdown-trigger:hover {
+  background: var(--toolbar-active-bg);
+}
+
+.split-dropdown-trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.split-dropdown-arrow {
+  font-size: 10px;
+  color: var(--toolbar-dropdown-arrow);
+  transition: color 0.2s;
+}
+
+.split-dropdown-trigger:hover .split-dropdown-arrow {
+  color: var(--toolbar-dropdown-arrow-hover);
+}
+
+.split-dropdown.is-active .split-dropdown-main {
+  color: var(--toolbar-active-text);
 }
 
 .color-choice {

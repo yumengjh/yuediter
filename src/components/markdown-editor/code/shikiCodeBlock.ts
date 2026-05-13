@@ -1,4 +1,5 @@
 import CodeBlock from "@tiptap/extension-code-block";
+import { ReactNodeViewRenderer } from "@tiptap/react";
 import { Plugin, PluginKey } from "prosemirror-state";
 import type { Node as ProseMirrorNode } from "prosemirror-model";
 import { Decoration, DecorationSet } from "prosemirror-view";
@@ -10,6 +11,7 @@ import {
   type CodeThemeMode,
   type ShikiHighlighter,
 } from "./codeHighlight";
+import CodeBlockView from "./CodeBlockView";
 
 export const SHIKI_CODE_BLOCK_PLUGIN_KEY = new PluginKey<DecorationSet>(
   "shiki-code-block-highlight",
@@ -116,6 +118,9 @@ export const createShikiCodeBlockExtension = ({
   defaultLanguage = DEFAULT_CODE_LANGUAGE,
 }: CreateShikiCodeBlockExtensionOptions) => {
   return CodeBlock.extend({
+    addNodeView() {
+      return ReactNodeViewRenderer(CodeBlockView);
+    },
     addProseMirrorPlugins() {
       return [
         new Plugin<DecorationSet>({

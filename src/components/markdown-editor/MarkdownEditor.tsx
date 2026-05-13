@@ -29,7 +29,12 @@ import { TableHeader } from "@tiptap/extension-table-header";
 import HorizontalRule from "@tiptap/extension-horizontal-rule";
 import { createPasteHandlerExtension } from "./extensions/pasteHandler";
 import { createFontSizeExtension } from "./extensions/fontSize";
+import { OrderedListStyle } from "./extensions/orderedListStyle";
+import { LineHeight } from "./extensions/lineHeight";
 import { createMarkdownShortcutsExtension } from "./extensions/markdownShortcuts";
+import { HighlightBlock } from "./extensions/highlightBlock";
+import HighlightBlockView from "./HighlightBlockView";
+import { Indent } from "./extensions/indent";
 import TaskItemView from "./TaskItemView";
 import { EditorContextProvider } from "./EditorContext";
 import Toolbar from "./Toolbar";
@@ -165,7 +170,8 @@ export default function MarkdownEditor({
         }),
         codeBlockExtension,
         // 行内格式扩展（禁用 inputRule，保留 mark/command 能力）
-        Code.extend({ addInputRules: () => [] }),
+        // 排除 '_'（所有 mark）改为 ''（不排除），允许 TextStyle/Color/Highlight 与 code 共存
+        Code.extend({ addInputRules: () => [], excludes: "" }),
         Bold.extend({ addInputRules: () => [] }),
         Italic.extend({ addInputRules: () => [] }),
         Strike.extend({ addInputRules: () => [] }),
@@ -213,6 +219,20 @@ export default function MarkdownEditor({
         TableHeader,
         createPasteHandlerExtension(),
         createFontSizeExtension(),
+        OrderedListStyle,
+        LineHeight.configure({
+          types: ["paragraph", "heading"],
+          defaultLineHeight: null,
+        }),
+        HighlightBlock.extend({
+          addNodeView() {
+            return ReactNodeViewRenderer(HighlightBlockView);
+          },
+        }),
+        Indent.configure({
+          types: ["paragraph", "heading"],
+          maxLevel: 8,
+        }),
       ],
       content: content || "<p></p>",
       autofocus,

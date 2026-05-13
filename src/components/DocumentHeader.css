@@ -1,0 +1,33 @@
+.document-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  border-radius: 8px 8px 0 0;
+  margin-bottom: 0;
+}
+
+.document-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.document-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.document-header-select .ant-select-selector {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  font-weight: 500;
+}
+
+.document-header-user {
+  cursor: default;
+}

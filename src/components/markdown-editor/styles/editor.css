@@ -204,7 +204,7 @@
   margin: 16px 0;
   overflow: auto;
   border-radius: 4px;
-  padding: 12px 16px;
+  padding: 0;
   font-family:
     SFMono-Regular,
     Consolas,
@@ -215,12 +215,12 @@
   font-size: 13px;
   line-height: 1.6;
   border: 1px solid var(--app-border-editor);
-  background: var(--app-bg-elevated);
+  background: transparent;
   color: var(--app-text);
   tab-size: 2;
 }
 
-/* 右上角语言标签 */
+/* 旧版 fallback：无 node-view 时的语言标签 */
 .tiptap-editor pre.tiptap-codeblock-node::before {
   content: attr(data-language);
   position: absolute;
@@ -257,7 +257,6 @@
 /* 深色主题代码块 */
 .tiptap-card[data-code-theme="dark"] .tiptap-editor pre {
   border-color: var(--app-code-dark-border);
-  background: var(--app-code-dark-bg);
   color: var(--app-code-dark-text);
 }
 
@@ -265,9 +264,94 @@
   color: var(--app-code-dark-label);
 }
 
+/* =====================================================
+   CodeBlockView — React Node View 简洁代码块
+   ===================================================== */
+
+/* 外层 wrapper（pre） */
+.tiptap-editor pre.code-block-view {
+  display: flex;
+  padding: 12px 0;
+  margin: 16px 0;
+  overflow: hidden;
+  border-radius: 4px;
+  border: 1px solid var(--app-border-editor);
+  background: var(--app-bg-page);
+}
+
+/* Node view 已有内容，隐藏旧版语言标签 */
+.tiptap-editor pre.code-block-view.tiptap-codeblock-node::before {
+  display: none;
+}
+
+.tiptap-editor pre.code-block-view.is-selected {
+  border-color: var(--app-primary-border);
+  box-shadow: 0 0 0 1px var(--app-primary-border);
+}
+
+/* 行号列 */
+.code-block-line-numbers {
+  flex-shrink: 0;
+  padding: 0;
+  min-width: 40px;
+  text-align: right;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.tiptap-card[data-code-theme="dark"] .code-block-line-numbers {
+  background: transparent;
+}
+
+.code-block-line-number {
+  display: block;
+  padding: 0 12px 0 16px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--app-text-disabled);
+  font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, Courier, monospace;
+}
+
+.tiptap-card[data-code-theme="dark"] .code-block-line-number {
+  color: var(--app-code-dark-label);
+}
+
+/* 代码内容区域 */
+.code-block-content {
+  flex: 1;
+  min-width: 0;
+  padding: 0 16px 0 0;
+  overflow-x: auto;
+}
+
+.code-block-content > code {
+  display: block;
+  background: transparent !important;
+  color: inherit;
+  font-family:
+    SFMono-Regular,
+    Consolas,
+    "Liberation Mono",
+    Menlo,
+    Courier,
+    monospace !important;
+  white-space: pre;
+  tab-size: 2;
+  line-height: 1.6;
+  font-size: 13px;
+  padding: 0;
+  margin: 0;
+}
+
+/* 深色主题下代码文字颜色 */
+.tiptap-card[data-code-theme="dark"] .code-block-content > code {
+  color: var(--app-code-dark-text);
+}
+
 /* ---------- 行内代码 — 严格还原语雀 ne-code-content ---------- */
 .tiptap-editor code:not(pre code):not(.shiki code):not(.shiki) {
   background-color: var(--app-bg-inline-code);
+  color: inherit;
   word-break: break-all;
   font-family:
     SFMono-Regular,
@@ -291,7 +375,12 @@
   margin: 1px 3px;
   padding: 0px 4px;
   font-size: inherit;
-  color: inherit;
+}
+
+/* 行内代码内部的 mark 元素（高亮颜色）需要显示 */
+.tiptap-editor code:not(pre code):not(.shiki code):not(.shiki) mark {
+  padding: 0;
+  border-radius: 0;
 }
 
 /* ---------- 引用块 — 语雀严格还原 ---------- */
@@ -435,6 +524,54 @@
   max-width: 100%;
   display: block;
   margin: 12px 0;
+}
+
+/* ---------- 高亮块 ---------- */
+.highlight-block-view {
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: 12px 0;
+  position: relative;
+}
+
+.highlight-block-color-bar {
+  position: absolute;
+  top: -36px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: var(--app-bg-card, #fff);
+  border: 1px solid var(--app-border-light, #e8e8e8);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.highlight-block-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.1s ease, border-color 0.1s ease;
+  padding: 0;
+}
+
+.highlight-block-swatch:hover {
+  transform: scale(1.15);
+}
+
+.highlight-block-swatch.is-active {
+  border-color: var(--app-primary, #1677ff);
+  box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.2);
+}
+
+.highlight-block-view .ProseMirror p,
+.highlight-block-view p {
+  margin: 0 !important;
 }
 
 /* ---------- 响应式内边距 ---------- */
