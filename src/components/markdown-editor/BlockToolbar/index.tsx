@@ -148,7 +148,7 @@ export default function BlockToolbar({ wrapperRef }: BlockToolbarProps) {
             if (menuState === 'closing') setMenuState('closed');
           }}
         >
-          <BlockMenu onClose={closeMenu} />
+          <BlockMenu onClose={closeMenu} hoveredBlock={hoveredBlock} />
         </div>
       )}
     </div>
