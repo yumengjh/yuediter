@@ -1,0 +1,88 @@
+/* ---- 容器 ---- */
+.block-handle-wrapper {
+  position: absolute;
+  z-index: 100;
+  pointer-events: auto;
+}
+
+.block-handle-wrapper--animate {
+  transition: top 0.15s ease;
+}
+
+/* ---- 6 点拖拽手柄 ---- */
+.block-handle__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--app-text-muted, #999);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.block-handle__btn:hover {
+  background: var(--app-bg-hover, #f0f0f0);
+  color: var(--app-text-primary, #333);
+}
+
+/* ---- 菜单锚点 + 动画 ---- */
+.block-menu-anchor {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  transform-origin: top right;
+  animation: blockMenuIn 0.15s ease-out forwards;
+}
+
+@keyframes blockMenuIn {
+  from {
+    opacity: 0;
+    transform: translateX(-100%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-100%) scale(1);
+  }
+}
+
+.block-menu-anchor--closing {
+  animation: blockMenuOut 0.12s ease-in forwards;
+  pointer-events: none;
+}
+
+@keyframes blockMenuOut {
+  from {
+    opacity: 1;
+    transform: translateX(-100%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-100%) scale(0.9);
+  }
+}
+
+/* ---- 菜单面板 ---- */
+.block-menu-popover {
+  min-width: 160px;
+  background: #fff;
+  border: 1px solid var(--app-border, #e5e7eb);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+.block-menu-popover .ant-menu {
+  border-inline-end: none !important;
+}
+
+.block-menu-popover .ant-menu-item {
+  height: 36px;
+  line-height: 36px;
+  font-size: 13px;
+}

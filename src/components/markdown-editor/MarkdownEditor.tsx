@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useEditor, EditorContent, ReactNodeViewRenderer } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import CodeBlock from "@tiptap/extension-code-block";
@@ -38,6 +38,7 @@ import { Indent } from "./extensions/indent";
 import TaskItemView from "./TaskItemView";
 import { EditorContextProvider } from "./EditorContext";
 import Toolbar from "./Toolbar";
+import BlockToolbar from "./BlockToolbar";
 import TableOfContents from "./TableOfContents";
 import "./styles/editor.css";
 
@@ -103,6 +104,7 @@ export default function MarkdownEditor({
   const [themeMode, setThemeMode] = useState<CodeThemeMode>("light");
   const [shikiHighlighter, setShikiHighlighter] = useState<ShikiHighlighter | null>(null);
   const [shikiReady, setShikiReady] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   // 主题检测
   useEffect(() => {
@@ -316,11 +318,14 @@ export default function MarkdownEditor({
       <div className="tiptap-card" data-code-theme={themeMode}>
         <EditorContextProvider value={{ editor }}>
           {showToolbar && <Toolbar />}
-          <div className="tiptap-editor-wrapper" style={{ minHeight, position: "relative" }}>
+          <div ref={wrapperRef} className="tiptap-editor-wrapper" style={{ minHeight, position: "relative" }}>
             {loading ? (
               <EditorSkeleton />
             ) : (
-              <EditorContent editor={editor} />
+              <>
+                <EditorContent editor={editor} />
+                {editable && <BlockToolbar wrapperRef={wrapperRef} />}
+              </>
             )}
           </div>
           {showTOC && <TableOfContents onClose={() => onTOCToggle?.(false)} />}
