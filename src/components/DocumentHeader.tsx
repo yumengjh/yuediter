@@ -61,7 +61,7 @@ export function DocumentHeader({ onSave, showTOC, onToggleTOC }: DocumentHeaderP
   const [visibilityChanging, setVisibilityChanging] = useState(false);
 
   useEffect(() => {
-    refreshDocs();
+    refreshDocs().catch(() => {});
   }, [refreshDocs]);
 
   useEffect(() => {

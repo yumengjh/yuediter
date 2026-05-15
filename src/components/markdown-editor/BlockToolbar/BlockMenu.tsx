@@ -11,6 +11,8 @@ import {
   PlusCircleOutlined,
 } from '@ant-design/icons';
 import { useMarkdownEditor } from '../EditorContext';
+import { getDocumentContent, loadDocumentContent } from '../../../services/document';
+import { useDocument } from '../../../contexts/DocumentContext';
 
 interface BlockMenuProps {
   onClose: () => void;
@@ -19,6 +21,7 @@ interface BlockMenuProps {
 
 export function BlockMenu({ onClose, hoveredBlock }: BlockMenuProps) {
   const editor = useMarkdownEditor();
+  const { currentDoc } = useDocument();
 
   const canMoveUp = useMemo(() => {
     if (!hoveredBlock) return false;
@@ -29,6 +32,84 @@ export function BlockMenu({ onClose, hoveredBlock }: BlockMenuProps) {
     if (!hoveredBlock) return false;
     return hoveredBlock.nextElementSibling !== null;
   }, [hoveredBlock]);
+
+  const deleteBlock = useCallback(async () => {
+    if (!editor || !hoveredBlock || !currentDoc) return;
+
+    const { view } = editor;
+    const blockEls = Array.from(view.dom.children) as HTMLElement[];
+    const domIndex = blockEls.indexOf(hoveredBlock);
+    if (domIndex < 0) return;
+
+    try {
+      // 1. 从服务器获取块列表，通过 DOM 位置匹配 blockId
+      const content = await getDocumentContent(currentDoc.docId);
+      interface FlatBlock { blockId: string; type: string; sortKey: string; children?: FlatBlock[] }
+      const allBlocks: FlatBlock[] = [];
+      if (content.tree) {
+        const walk = (b: FlatBlock) => { allBlocks.push(b); b.children?.forEach(walk); };
+        walk(content.tree as unknown as FlatBlock);
+        allBlocks.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+      }
+      const contentBlocks = allBlocks.filter((b) => b.type !== 'root');
+
+      if (domIndex >= contentBlocks.length) return;
+
+      // 2. 调用服务器 API 删除
+      const { apiPost } = await import('../../../services/api-client');
+      await apiPost('/blocks/batch', {
+        docId: currentDoc.docId,
+        operations: [{ type: 'delete', blockId: contentBlocks[domIndex].blockId }],
+      });
+
+      // 3. 从服务器重新加载内容，替换编辑器（不触发 onChange）
+      const html = await loadDocumentContent(currentDoc.docId);
+      editor.commands.setContent(html || '<p></p>', { emitUpdate: false });
+    } catch (err) {
+      console.error('[BlockMenu] 删除块失败:', err);
+      // 回退：本地删除
+      try {
+        const { view } = editor;
+        const { doc } = view.state;
+        const $pos = doc.resolve(view.posAtDOM(hoveredBlock, 0));
+        const from = $pos.before(1);
+        const to = $pos.after(1);
+        if (view.state.doc.childCount <= 1) {
+          view.dispatch(view.state.tr.delete(0, doc.content.size).insert(0, view.state.schema.nodes.paragraph.create()));
+        } else {
+          view.dispatch(view.state.tr.delete(from, to));
+        }
+      } catch {}
+    }
+  }, [editor, hoveredBlock, currentDoc]);
+
+  const copyBlock = useCallback(async () => {
+    if (!hoveredBlock) return;
+    const html = hoveredBlock.outerHTML;
+    const text = hoveredBlock.textContent || '';
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'text/html': new Blob([html], { type: 'text/html' }),
+          'text/plain': new Blob([text], { type: 'text/plain' }),
+        }),
+      ]);
+    } catch {
+      await navigator.clipboard.writeText(text);
+    }
+  }, [hoveredBlock]);
+
+  const clearFormat = useCallback(() => {
+    if (!editor || !hoveredBlock) return;
+    const { view } = editor;
+    const { doc } = view.state;
+    const $pos = doc.resolve(view.posAtDOM(hoveredBlock, 0));
+    const from = $pos.before(1);
+    const to = $pos.after(1);
+    const text = hoveredBlock.textContent || '';
+    const paragraph = view.state.schema.nodes.paragraph.create(null, text ? view.state.schema.text(text) : undefined);
+    view.dispatch(view.state.tr.replaceWith(from, to, paragraph));
+  }, [editor, hoveredBlock]);
 
   const swapBlocks = useCallback((direction: 'up' | 'down') => {
     if (!editor || !hoveredBlock) return;
@@ -89,6 +170,18 @@ export function BlockMenu({ onClose, hoveredBlock }: BlockMenuProps) {
 
   const handleClick: MenuProps['onClick'] = useCallback(({ key }) => {
     switch (key) {
+      case 'delete':
+        deleteBlock();
+        break;
+      case 'copy':
+        copyBlock();
+        break;
+      case 'cut':
+        copyBlock().then(() => deleteBlock());
+        break;
+      case 'clear':
+        clearFormat();
+        break;
       case 'moveUp':
         swapBlocks('up');
         break;
@@ -99,7 +192,7 @@ export function BlockMenu({ onClose, hoveredBlock }: BlockMenuProps) {
         console.log(`[BlockMenu] 点击: ${key}`);
     }
     onClose();
-  }, [swapBlocks, onClose]);
+  }, [deleteBlock, copyBlock, clearFormat, swapBlocks, onClose]);
 
   return (
     <div className="block-menu-popover">

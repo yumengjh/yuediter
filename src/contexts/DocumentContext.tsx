@@ -26,6 +26,7 @@ interface DocumentContextValue {
   saveStatus: "idle" | "saving" | "saved" | "error";
   lastSavedAt: Date | null;
   setWorkspace: (id: string) => void;
+  clearWorkspace: () => void;
   selectDoc: (docId: string) => Promise<void>;
   loadContent: (docId: string) => Promise<string>;
   saveDoc: (html: string) => Promise<void>;
@@ -61,15 +62,31 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
     setDocuments([]);
   }, []);
 
+  const clearWorkspace = useCallback(() => {
+    setWorkspaceId(null);
+    localStorage.removeItem(WORKSPACE_KEY);
+    setCurrentDoc(null);
+    currentDocRef.current = null;
+    setDocuments([]);
+  }, []);
+
   const refreshDocs = useCallback(async () => {
     if (!workspaceId) return;
-    const res = await apiListDocs({
-      workspaceId,
-      sortBy: "updatedAt",
-      sortOrder: "DESC",
-    });
-    setDocuments(res.items);
-  }, [workspaceId]);
+    try {
+      const res = await apiListDocs({
+        workspaceId,
+        sortBy: "updatedAt",
+        sortOrder: "DESC",
+      });
+      setDocuments(res.items);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "";
+      if (msg.includes("工作空间不存在")) {
+        clearWorkspace();
+      }
+      throw e;
+    }
+  }, [workspaceId, clearWorkspace]);
 
   // selectDoc：Header 调用，只设置 currentDoc，不加载内容
   const selectDoc = useCallback(async (docId: string) => {
@@ -149,6 +166,7 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
         saveStatus,
         lastSavedAt,
         setWorkspace,
+        clearWorkspace,
         selectDoc,
         loadContent,
         saveDoc,
