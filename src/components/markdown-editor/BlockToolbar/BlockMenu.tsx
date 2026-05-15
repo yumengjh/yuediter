@@ -34,12 +34,25 @@ export function BlockMenu({ onClose, hoveredBlock }: BlockMenuProps) {
   }, [hoveredBlock]);
 
   const deleteBlock = useCallback(async () => {
-    if (!editor || !hoveredBlock || !currentDoc) return;
+    if (!editor || !hoveredBlock) return;
 
     const { view } = editor;
     const blockEls = Array.from(view.dom.children) as HTMLElement[];
     const domIndex = blockEls.indexOf(hoveredBlock);
     if (domIndex < 0) return;
+
+    // 本地删除（非数据库文档直接生效）
+    const { doc } = view.state;
+    const $pos = doc.resolve(view.posAtDOM(hoveredBlock, 0));
+    const from = $pos.before(1);
+    const to = $pos.after(1);
+    if (view.state.doc.childCount <= 1) {
+      view.dispatch(view.state.tr.delete(0, doc.content.size).insert(0, view.state.schema.nodes.paragraph.create()));
+    } else {
+      view.dispatch(view.state.tr.delete(from, to));
+    }
+
+    if (!currentDoc) return;
 
     try {
       // 1. 从服务器获取块列表，通过 DOM 位置匹配 blockId
@@ -67,18 +80,10 @@ export function BlockMenu({ onClose, hoveredBlock }: BlockMenuProps) {
       editor.commands.setContent(html || '<p></p>', { emitUpdate: false });
     } catch (err) {
       console.error('[BlockMenu] 删除块失败:', err);
-      // 回退：本地删除
+      // 回滚：从服务器重新加载内容
       try {
-        const { view } = editor;
-        const { doc } = view.state;
-        const $pos = doc.resolve(view.posAtDOM(hoveredBlock, 0));
-        const from = $pos.before(1);
-        const to = $pos.after(1);
-        if (view.state.doc.childCount <= 1) {
-          view.dispatch(view.state.tr.delete(0, doc.content.size).insert(0, view.state.schema.nodes.paragraph.create()));
-        } else {
-          view.dispatch(view.state.tr.delete(from, to));
-        }
+        const html = await loadDocumentContent(currentDoc.docId);
+        editor.commands.setContent(html || '<p></p>', { emitUpdate: false });
       } catch {}
     }
   }, [editor, hoveredBlock, currentDoc]);
