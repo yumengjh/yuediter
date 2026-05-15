@@ -1,4 +1,5 @@
 import { apiGet, apiPost, apiPatch, apiDelete } from "./api-client";
+import { blockCache } from "./block-cache";
 
 // ─── 类型定义 ───
 
@@ -230,6 +231,8 @@ export async function loadDocumentContent(docId: string): Promise<string> {
   const flatBlocks = flattenBlockTree(resp.tree);
   // 过滤掉 root 块，只保留内容块
   const contentBlocks = flatBlocks.filter((b) => b.type !== "root");
+  // 更新块缓存
+  blockCache.set(docId, contentBlocks);
   return blocksToHtml(contentBlocks);
 }
 
@@ -241,11 +244,15 @@ export async function saveDocumentContent(
   html: string,
   rootBlockId: string,
 ): Promise<void> {
-  // 1. 获取已有块
-  const resp = await getDocumentContent(docId);
-  const existingBlocks = resp.tree
-    ? flattenBlockTree(resp.tree).filter((b) => b.type !== "root")
-    : [];
+  // 1. 从缓存获取已有块，缓存为空时 fallback 到 GET
+  let existingBlocks = blockCache.get(docId);
+  if (!existingBlocks) {
+    const resp = await getDocumentContent(docId);
+    existingBlocks = resp.tree
+      ? flattenBlockTree(resp.tree).filter((b) => b.type !== "root")
+      : [];
+    blockCache.set(docId, existingBlocks);
+  }
 
   // 2. 解析新 HTML 为顶级节点
   const newNodes = splitHtmlToTopLevelNodes(html);
@@ -288,5 +295,28 @@ export async function saveDocumentContent(
   // 4. 执行批量操作
   if (operations.length > 0) {
     await batchOperations(docId, operations);
+  }
+
+  // 5. 更新缓存
+  const hasCreateOrDelete = operations.some(
+    (op) => op.type === "create" || op.type === "delete",
+  );
+  if (hasCreateOrDelete) {
+    // 有新增/删除操作时，重新加载获取真实的 blockId
+    const resp = await getDocumentContent(docId);
+    const blocks = resp.tree
+      ? flattenBlockTree(resp.tree).filter((b) => b.type !== "root")
+      : [];
+    blockCache.replace(docId, blocks);
+  } else {
+    // 只有 update 操作时，直接更新缓存中的 payload
+    const updatedBlocks = newNodes.map((html, i) => {
+      const existing = existingBlocks[i];
+      if (existing) {
+        return { ...existing, payload: { html } };
+      }
+      return existing!;
+    });
+    blockCache.replace(docId, updatedBlocks);
   }
 }
