@@ -20,9 +20,13 @@
   border: none;
   background: transparent;
   color: var(--app-text-muted, #999);
-  cursor: pointer;
+  cursor: grab;
   border-radius: 4px;
   transition: background 0.15s, color 0.15s;
+}
+
+.block-handle__btn:active {
+  cursor: grabbing;
 }
 
 .block-handle__btn:hover {
@@ -85,4 +89,53 @@
   height: 36px;
   line-height: 36px;
   font-size: 13px;
+}
+
+/* ---- 拖拽幽灵元素 ---- */
+.block-drag-ghost {
+  position: fixed;
+  z-index: 10000;
+  pointer-events: none;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    0 8px 24px rgba(0, 0, 0, 0.12);
+  opacity: 0.75;
+  will-change: left, top;
+  overflow: hidden;
+  max-height: 160px;
+  mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+}
+
+/* ---- 放置指示线 ---- */
+.drop-indicator {
+  position: fixed;
+  height: 3px;
+  background: #2563eb;
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 9999;
+  transition: top 0.06s ease-out;
+  box-shadow: 0 0 6px rgba(37, 99, 235, 0.3);
+}
+
+.drop-indicator::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #2563eb;
+}
+
+/* ---- 拖拽中 body 状态 ---- */
+body.block-dragging {
+  cursor: grabbing !important;
+  user-select: none;
+  -webkit-user-select: none;
 }

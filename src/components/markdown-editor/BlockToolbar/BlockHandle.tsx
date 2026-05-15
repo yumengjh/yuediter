@@ -15,14 +15,16 @@ function DragHandleIcon() {
 
 interface BlockHandleProps {
   onClick: () => void;
+  onMouseDown: (e: React.MouseEvent) => void;
 }
 
-export function BlockHandle({ onClick }: BlockHandleProps) {
+export function BlockHandle({ onClick, onMouseDown }: BlockHandleProps) {
   return (
     <button
       className="block-handle__btn"
       onClick={onClick}
-      title="点击打开菜单"
+      onMouseDown={onMouseDown}
+      title="点击打开菜单 / 拖拽移动块"
     >
       <DragHandleIcon />
     </button>
