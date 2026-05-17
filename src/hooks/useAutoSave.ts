@@ -12,9 +12,9 @@ interface UseAutoSaveResult {
   saveNow: () => void;
 }
 
-export function useAutoSave(
-  html: string,
-  saveFn: (html: string) => Promise<void>,
+export function useAutoSave<T>(
+  content: T,
+  saveFn: (content: T) => Promise<void>,
   options: UseAutoSaveOptions = {},
 ): UseAutoSaveResult {
   const { delay = 2000, enabled = true } = options;
@@ -23,13 +23,13 @@ export function useAutoSave(
   const [error, setError] = useState<Error | null>(null);
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const latestHtmlRef = useRef(html);
+  const latestContentRef = useRef(content);
   const saveFnRef = useRef(saveFn);
   const savingRef = useRef(false);
 
   useEffect(() => {
-    latestHtmlRef.current = html;
-  }, [html]);
+    latestContentRef.current = content;
+  }, [content]);
 
   useEffect(() => {
     saveFnRef.current = saveFn;
@@ -41,7 +41,7 @@ export function useAutoSave(
     setIsSaving(true);
     setError(null);
     try {
-      await saveFnRef.current(latestHtmlRef.current);
+      await saveFnRef.current(latestContentRef.current);
       setLastSavedAt(new Date());
     } catch (e) {
       setError(e instanceof Error ? e : new Error("保存失败"));
@@ -51,9 +51,10 @@ export function useAutoSave(
     }
   }, []);
 
-  // html 变化时防抖保存
+  // content 变化时防抖保存
   useEffect(() => {
-    if (!enabled || !html) return;
+    if (!enabled) return;
+    if (typeof content === "string" && !content) return;
 
     if (timerRef.current) {
       clearTimeout(timerRef.current);
@@ -67,7 +68,7 @@ export function useAutoSave(
         clearTimeout(timerRef.current);
       }
     };
-  }, [html, delay, doSave, enabled]);
+  }, [content, delay, doSave, enabled]);
 
   // 手动立即保存
   const saveNow = useCallback(() => {

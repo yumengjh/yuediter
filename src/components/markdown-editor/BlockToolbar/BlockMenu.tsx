@@ -11,7 +11,7 @@ import {
   PlusCircleOutlined,
 } from '@ant-design/icons';
 import { useMarkdownEditor } from '../EditorContext';
-import { loadDocumentContent } from '../../../services/document';
+import { loadDocumentContentV2 } from '../../../services/document';
 import { useDocument } from '../../../contexts/DocumentContext';
 
 interface BlockMenuProps {
@@ -67,8 +67,8 @@ export function BlockMenu({ onClose, hoveredBlock }: BlockMenuProps) {
       message.error("删除失败，已恢复");
       // 回滚：从服务器重新加载内容
       try {
-        const { html } = await loadDocumentContent(currentDoc.docId);
-        editor.commands.setContent(html || '<p></p>', { emitUpdate: false });
+        const { content } = await loadDocumentContentV2(currentDoc.docId);
+        editor.commands.setContent(content || '<p></p>', { emitUpdate: false });
       } catch {}
     }
   }, [editor, hoveredBlock, currentDoc]);

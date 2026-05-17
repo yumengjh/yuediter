@@ -17,7 +17,7 @@ export default function CodeBlockView({ node, selected }: NodeViewProps) {
         ))}
       </div>
       <div className="code-block-content">
-        <NodeViewContent as="code" spellCheck={false} />
+        <NodeViewContent as={"code" as "div"} spellCheck={false} />
       </div>
     </NodeViewWrapper>
   );

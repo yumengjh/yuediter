@@ -12,7 +12,10 @@ import {
 import { SetupModal } from "@/components/SetupModal";
 import { DocumentHeader } from "@/components/DocumentHeader";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import { commitVersion } from "@/services/document";
+import { commitVersion, type EditorContent } from "@/services/document";
+import { generateHTML } from "@tiptap/core";
+import { serializationExtensions } from "@/services/tiptap-extensions";
+import type { TiptapDoc } from "@/services/tiptap-converter";
 
 // ─── Turndown 配置（保留原有逻辑） ───
 
@@ -221,34 +224,48 @@ function htmlToMarkdown(html: string): string {
   return turndownService.turndown(html).trim();
 }
 
+function contentToHtml(content: EditorContent): string {
+  if (typeof content === "string") return content;
+  if (content && content.type === "doc") {
+    return generateHTML(content, serializationExtensions);
+  }
+  return "";
+}
+
 type OutputTab = "html" | "markdown" | "json";
 
 // ─── 编辑器主内容区 ───
 
-const DEFAULT_CONTENT = `<h2>欢迎使用 Markdown 增强型富文本编辑器</h2>
-<p>这是一款 <strong>所见即所得</strong> 的现代化编辑器，基于 TipTap 构建，融合 Markdown 简洁性与富文本强大能力，支持所有常用排版与内容格式：</p>
-<ul>
-  <li>六级标题（H1 - H6）自动排版与目录结构</li>
-  <li>加粗、斜体、下划线、删除线、字体颜色、背景高亮</li>
-  <li>有序列表 / 无序列表（支持多前缀样式）</li>
-  <li>待办事项清单、段落对齐、行高、缩进调整</li>
-  <li>代码块 / 行内代码（支持主流编程语言语法高亮）</li>
-  <li>引用块、高亮提示块、分割线、表格、链接、图片</li>
-  <li>撤销 / 重做、清除格式、格式刷一键复用样式</li>
-</ul>
-<blockquote><p>无需记忆复杂语法，点击工具栏即可完成专业排版，适用于笔记、文档、技术文章、报告等多种场景。</p></blockquote>
-<pre><code class="language-typescript">// 快速体验：选中文字 → 使用工具栏格式化
-const editor = "现代化富文本编辑器";
-console.log("欢迎使用", editor);
-</code></pre>
-<p>开始你的创作吧 ↓</p>`;
+const DEFAULT_CONTENT: TiptapDoc = {
+  type: "doc",
+  content: [
+    { type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: "欢迎使用 Markdown 增强型富文本编辑器" }] },
+    { type: "paragraph", content: [
+      { type: "text", text: "这是一款 " },
+      { type: "text", text: "所见即所得", marks: [{ type: "bold" }] },
+      { type: "text", text: " 的现代化编辑器，基于 TipTap 构建，融合 Markdown 简洁性与富文本强大能力，支持所有常用排版与内容格式：" },
+    ]},
+    { type: "bulletList", content: [
+      { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "六级标题（H1 - H6）自动排版与目录结构" }] }] },
+      { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "加粗、斜体、下划线、删除线、字体颜色、背景高亮" }] }] },
+      { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "有序列表 / 无序列表（支持多前缀样式）" }] }] },
+      { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "待办事项清单、段落对齐、行高、缩进调整" }] }] },
+      { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "代码块 / 行内代码（支持主流编程语言语法高亮）" }] }] },
+      { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "引用块、高亮提示块、分割线、表格、链接、图片" }] }] },
+      { type: "listItem", content: [{ type: "paragraph", content: [{ type: "text", text: "撤销 / 重做、清除格式、格式刷一键复用样式" }] }] },
+    ]},
+    { type: "blockquote", content: [{ type: "paragraph", content: [{ type: "text", text: "无需记忆复杂语法，点击工具栏即可完成专业排版，适用于笔记、文档、技术文章、报告等多种场景。" }] }] },
+    { type: "codeBlock", attrs: { language: "typescript" }, content: [{ type: "text", text: '// 快速体验：选中文字 → 使用工具栏格式化\nconst editor = "现代化富文本编辑器";\nconsole.log("欢迎使用", editor);' }] },
+    { type: "paragraph", content: [{ type: "text", text: "开始你的创作吧 ↓" }] },
+  ],
+};
 
 
 function EditorContent() {
   const { isAuthenticated: authed } = useAuth();
   const { currentDoc, loadContent, saveDoc, workspaceId, setWorkspace } =
     useDocument();
-  const [html, setHtml] = useState(DEFAULT_CONTENT);
+  const [content, setContent] = useState<EditorContent>(DEFAULT_CONTENT);
   const [activeTab, setActiveTab] = useState<OutputTab>("markdown");
   const [setupOpen, setSetupOpen] = useState(false);
   const [loadingDoc, setLoadingDoc] = useState(false);
@@ -264,7 +281,7 @@ function EditorContent() {
   useEffect(() => {
     const docId = currentDoc?.docId;
     if (!docId) {
-      setHtml(DEFAULT_CONTENT);
+      setContent(DEFAULT_CONTENT);
       loadedDocIdRef.current = null;
       return;
     }
@@ -273,11 +290,11 @@ function EditorContent() {
     loadedDocIdRef.current = docId;
     setLoadingDoc(true);
     loadContent(docId)
-      .then((content) => {
-        setHtml(content || DEFAULT_CONTENT);
+      .then((loaded) => {
+        setContent(loaded || DEFAULT_CONTENT);
       })
       .catch(() => {
-        setHtml(DEFAULT_CONTENT);
+        setContent(DEFAULT_CONTENT);
         loadedDocIdRef.current = null;
       })
       .finally(() => {
@@ -285,18 +302,18 @@ function EditorContent() {
       });
   }, [currentDoc, loadContent]);
 
-  useAutoSave(html, saveDoc, { delay: 2000, enabled: !loadingDoc });
+  useAutoSave(content, saveDoc, { delay: 2000, enabled: !loadingDoc });
 
   const handleManualSave = useCallback(async () => {
     try {
-      await saveDoc(html);
+      await saveDoc(content);
       if (currentDoc) {
         await commitVersion(currentDoc.docId, "手动保存");
       }
     } catch (e) {
       console.error("手动保存失败:", e);
     }
-  }, [saveDoc, html, currentDoc]);
+  }, [saveDoc, content, currentDoc]);
 
   const handleSetupComplete = useCallback(
     (wsId: string) => {
@@ -306,13 +323,15 @@ function EditorContent() {
     [setWorkspace],
   );
 
-  const markdown = useMemo(() => htmlToMarkdown(html), [html]);
+  const previewHtml = useMemo(() => contentToHtml(content), [content]);
+  const markdown = useMemo(() => htmlToMarkdown(previewHtml), [previewHtml]);
   const jsonContent = useMemo(() => {
     if (activeTab !== "json") return "";
+    if (typeof content === "object") return JSON.stringify(content, null, 2);
     const json = editorRef.current?.getJSON();
     return json ? JSON.stringify(json, null, 2) : "{}";
-  }, [activeTab, html]);
-  const outputContent = activeTab === "html" ? html : activeTab === "json" ? jsonContent : markdown;
+  }, [activeTab, content]);
+  const outputContent = activeTab === "html" ? previewHtml : activeTab === "json" ? jsonContent : markdown;
   const copyLabel = activeTab === "html" ? "复制 HTML" : activeTab === "json" ? "复制 JSON" : "复制 Markdown";
 
   return (
@@ -329,8 +348,8 @@ function EditorContent() {
           <div className="output-card">
             <MarkdownEditor
               ref={editorRef}
-              content={html}
-              onChange={setHtml}
+              content={content}
+              onChange={setContent}
               placeholder="开始记录你的知识吧…"
               showTOC={showTOC}
               onTOCToggle={setShowTOC}

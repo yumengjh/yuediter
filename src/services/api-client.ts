@@ -1,4 +1,5 @@
-const BASE_URL = "https://api-zzz.yumgjs.com/api/v1";
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE || "https://api-zzz.yumgjs.com/api/v1";
+// const BASE_URL = "https://api-zzz.yumgjs.com/api/v1";
 
 const ACCESS_TOKEN_KEY = "accessToken";
 const REFRESH_TOKEN_KEY = "refreshToken";

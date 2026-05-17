@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import DOMPurify from "isomorphic-dompurify";
 import { decodeDocSlug } from "@/lib/doc-slug";
 import { highlightCodeBlocks } from "@/lib/highlight";
+import { renderBlockTreeToHtml } from "@/services/generate-block-html";
 import "@/components/markdown-editor/styles/editor.css";
 import "./style.css";
 
@@ -10,7 +11,9 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://api-zzz.yumgjs.com
 
 interface Block {
   blockId: string;
+  type: string;
   payload: Record<string, unknown>;
+  sortKey?: string;
   children?: Block[];
 }
 
@@ -18,22 +21,6 @@ interface ContentResponse {
   docId: string;
   title: string;
   tree: Block;
-}
-
-function flattenHtml(tree: Block): string {
-  const parts: string[] = [];
-  function walk(block: Block) {
-    if (block.payload?.html) {
-      parts.push(block.payload.html as string);
-    }
-    if (block.children) {
-      for (const child of block.children) {
-        walk(child);
-      }
-    }
-  }
-  walk(tree);
-  return parts.join("");
 }
 
 async function getDocContent(slug: string) {
@@ -52,7 +39,7 @@ async function getDocContent(slug: string) {
   if (!json.success) return null;
 
   const data: ContentResponse = json.data;
-  const rawHtml = flattenHtml(data.tree);
+  const rawHtml = renderBlockTreeToHtml(data.tree);
   const highlighted = await highlightCodeBlocks(rawHtml);
   const html = DOMPurify.sanitize(highlighted, {
     ADD_TAGS: ["code", "pre", "span"],

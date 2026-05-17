@@ -9,13 +9,15 @@ import {
 import {
   createDocument as apiCreateDoc,
   listDocuments as apiListDocs,
-  loadDocumentContent,
-  saveDocumentContent,
+  loadDocumentContentV2,
+  saveDocumentContentV2,
   getDocument,
   updateDocument as apiUpdateDoc,
   publishDocument as apiPublishDoc,
   type Document,
+  type EditorContent,
 } from "../services/document";
+import type { TiptapDoc } from "../services/tiptap-converter";
 
 const WORKSPACE_KEY = "currentWorkspaceId";
 
@@ -28,8 +30,8 @@ interface DocumentContextValue {
   setWorkspace: (id: string) => void;
   clearWorkspace: () => void;
   selectDoc: (docId: string) => Promise<void>;
-  loadContent: (docId: string) => Promise<string>;
-  saveDoc: (html: string) => Promise<void>;
+  loadContent: (docId: string) => Promise<EditorContent>;
+  saveDoc: (content: EditorContent) => Promise<void>;
   createDoc: (title: string) => Promise<Document>;
   updateDoc: (docId: string, data: { title?: string; icon?: string; visibility?: string }) => Promise<void>;
   publishDoc: (docId: string) => Promise<void>;
@@ -52,10 +54,10 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
 
   // 用 ref 保持 currentDoc 最新，避免 saveDoc 依赖 currentDoc 导致引用变化
   const currentDocRef = useRef<Document | null>(null);
-  // 记录最近一次保存的 HTML，用于脏检查
-  const lastSavedHtmlRef = useRef<string>("");
-  // 缓存 blockId 映射：DOM 位置索引 → 服务器 blockId
-  const blockIdMapRef = useRef<Map<number, string>>(new Map());
+  // 记录最近一次保存的内容，用于脏检查
+  const lastSavedContentRef = useRef<EditorContent>("");
+  // 缓存 blockId 列表
+  const blockIdsRef = useRef<string[]>([]);
 
   const setWorkspace = useCallback((id: string) => {
     setWorkspaceId(id);
@@ -98,25 +100,28 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
     currentDocRef.current = doc;
   }, []);
 
-  // loadContent：EditorContent 调用，加载指定文档的 HTML 和 blockId 映射
-  const loadContent = useCallback(async (docId: string): Promise<string> => {
-    blockIdMapRef.current = new Map();
-    const { html, blockIdMap } = await loadDocumentContent(docId);
-    blockIdMapRef.current = blockIdMap;
-    lastSavedHtmlRef.current = html;
-    return html;
+  // loadContent：加载指定文档内容（自动检测格式）
+  const loadContent = useCallback(async (docId: string): Promise<EditorContent> => {
+    const { content, blockIds } = await loadDocumentContentV2(docId);
+    blockIdsRef.current = blockIds;
+    lastSavedContentRef.current = content;
+    return content;
   }, []);
 
   // saveDoc：引用永远稳定（不依赖 currentDoc state）
-  const saveDoc = useCallback(async (html: string) => {
+  const saveDoc = useCallback(async (content: EditorContent) => {
     const doc = currentDocRef.current;
     if (!doc) return;
     // 脏检查：内容未变化则跳过
-    if (html === lastSavedHtmlRef.current) return;
+    if (typeof content === "string" && typeof lastSavedContentRef.current === "string") {
+      if (content === lastSavedContentRef.current) return;
+    } else if (typeof content === "object" && typeof lastSavedContentRef.current === "object") {
+      if (JSON.stringify(content) === JSON.stringify(lastSavedContentRef.current)) return;
+    }
     setSaveStatus("saving");
     try {
-      await saveDocumentContent(doc.docId, html, doc.rootBlockId);
-      lastSavedHtmlRef.current = html;
+      await saveDocumentContentV2(doc.docId, content, doc.rootBlockId);
+      lastSavedContentRef.current = content;
       setSaveStatus("saved");
       setLastSavedAt(new Date());
     } catch (e) {
@@ -162,8 +167,8 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const getBlockId = useCallback((domIndex: number): string | undefined => {
-    return blockIdMapRef.current.get(domIndex);
+  const getBlockId = useCallback((_domIndex: number): string | undefined => {
+    return undefined;
   }, []);
 
   return (

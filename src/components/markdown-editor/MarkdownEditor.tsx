@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, forwardRef, useImperativeHandle } from "react";
 import { useEditor, EditorContent, ReactNodeViewRenderer } from "@tiptap/react";
 import type { Editor } from "@tiptap/react";
+import type { EditorContent as EditorContentType } from "@/services/document";
 import StarterKit from "@tiptap/starter-kit";
 import CodeBlock from "@tiptap/extension-code-block";
 import Code from "@tiptap/extension-code";
@@ -56,10 +57,10 @@ export interface MarkdownEditorRef {
 }
 
 export interface MarkdownEditorProps {
-  /** HTML 内容 */
-  content?: string;
-  /** 内容变化回调 */
-  onChange?: (html: string) => void;
+  /** 内容（HTML 字符串或 Tiptap JSON） */
+  content?: EditorContentType;
+  /** 内容变化回调（输出 Tiptap JSON） */
+  onChange?: (content: EditorContentType) => void;
   /** 是否可编辑，默认 true */
   editable?: boolean;
   /** 占位文字 */
@@ -186,9 +187,8 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(functi
   const handleUpdate = useCallback(
     ({ editor: ed }: { editor: import("@tiptap/core").Editor }) => {
       if (!onChange) return;
-      const html = ed.getHTML();
-      const normalized = html === "<p></p>" ? "" : html;
-      onChange(normalized);
+      const json = ed.getJSON() as EditorContentType;
+      onChange(json);
     },
     [onChange],
   );
@@ -306,13 +306,30 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(functi
   // 同步外部 content 变化
   useEffect(() => {
     if (!editor || !editor.schema) return;
-    const current = editor.getHTML();
-    const normalizedCurrent = current === "<p></p>" ? "" : current;
-    const normalizedContent = content || "";
 
-    if (normalizedCurrent === normalizedContent) return;
-
-    editor.commands.setContent(content || "<p></p>", { emitUpdate: false });
+    if (typeof content === "string") {
+      // HTML 字符串模式（旧文档回退）
+      const current = editor.getHTML();
+      const normalizedCurrent = current === "<p></p>" ? "" : current;
+      const normalizedContent = content || "";
+      if (normalizedCurrent === normalizedContent) return;
+      editor.commands.setContent(content || "<p></p>", { emitUpdate: false });
+    } else if (content && typeof content === "object") {
+      // Tiptap JSON 模式（新文档）
+      // 避免重复设置相同内容导致光标重置：先比较文档子节点数，再比较 JSON
+      const currentJSON = editor.getJSON();
+      const currentChildren = currentJSON.content ?? [];
+      const newChildren = (content as unknown as Record<string, unknown>).content ?? [];
+      if (
+        Array.isArray(currentChildren) &&
+        Array.isArray(newChildren) &&
+        currentChildren.length === newChildren.length &&
+        JSON.stringify(currentChildren) === JSON.stringify(newChildren)
+      ) {
+        return;
+      }
+      editor.commands.setContent(content, { emitUpdate: false });
+    }
   }, [content, editor]);
 
   // 暴露编辑器 API

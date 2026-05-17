@@ -1,4 +1,12 @@
 import { apiGet, apiPost, apiPatch, apiDelete } from "./api-client";
+import {
+  isLegacyDocument,
+  tiptapJsonToBlocks,
+  blocksToTiptapJson,
+  extractPlainText,
+  type TiptapDoc,
+  type TiptapNode,
+} from "./tiptap-converter";
 
 // ─── 类型定义 ───
 
@@ -309,6 +317,128 @@ export async function saveDocumentContent(
   }
 
   // 4. 执行批量操作
+  if (operations.length > 0) {
+    await batchOperations(docId, operations);
+  }
+}
+
+// ─── V2：双格式加载/保存 ───
+
+export type EditorContent = string | TiptapDoc;
+
+/**
+ * 加载文档内容（V2）
+ * - 旧格式（payload.html）→ 返回 HTML 字符串
+ * - 新格式（结构化 JSON）→ 返回 TiptapDoc
+ */
+export async function loadDocumentContentV2(
+  docId: string,
+): Promise<{ content: EditorContent; blockIds: string[] }> {
+  const resp = await getDocumentContent(docId);
+  if (!resp.tree) return { content: "", blockIds: [] };
+
+  const flatBlocks = flattenBlockTree(resp.tree);
+  const contentBlocks = flatBlocks.filter((b) => b.type !== "root");
+
+  if (contentBlocks.length === 0) return { content: "", blockIds: [] };
+
+  const blockIds = contentBlocks.map((b) => b.blockId);
+
+  if (isLegacyDocument(contentBlocks)) {
+    // 旧格式：拼接 HTML，注入 data-block-id
+    const blockIdMap = new Map<number, string>();
+    contentBlocks.forEach((b, i) => blockIdMap.set(i, b.blockId));
+    const html = blocksToHtml(contentBlocks, blockIdMap);
+    return { content: html, blockIds };
+  }
+
+  // 新格式：重组为 Tiptap JSON
+  const tiptapDoc = blocksToTiptapJson(contentBlocks);
+  return { content: tiptapDoc, blockIds };
+}
+
+/**
+ * 保存文档内容（V2）
+ * - HTML 字符串 → 旧逻辑（位置 diff）
+ * - TiptapDoc JSON → 新逻辑（blockId 精确匹配 diff）
+ */
+export async function saveDocumentContentV2(
+  docId: string,
+  content: EditorContent,
+  rootBlockId: string,
+): Promise<void> {
+  if (typeof content === "string") {
+    await saveDocumentContent(docId, content, rootBlockId);
+    return;
+  }
+  await saveJsonContent(docId, content, rootBlockId);
+}
+
+/** JSON 保存路径：基于 blockId 精确匹配 diff */
+async function saveJsonContent(
+  docId: string,
+  tiptapDoc: TiptapDoc,
+  rootBlockId: string,
+): Promise<void> {
+  const resp = await getDocumentContent(docId);
+  const existingBlocks = resp.tree
+    ? flattenBlockTree(resp.tree).filter((b) => b.type !== "root")
+    : [];
+
+  const existingMap = new Map<string, Block>();
+  for (const block of existingBlocks) {
+    existingMap.set(block.blockId, block);
+  }
+
+  const newBlockPayloads = tiptapJsonToBlocks(tiptapDoc);
+  const operations: BatchOperation[] = [];
+  const matchedIds = new Set<string>();
+  let sortKeyCounter = 0;
+
+  for (const newBlock of newBlockPayloads) {
+    sortKeyCounter++;
+    const sortKey = String(sortKeyCounter * 1000).padStart(6, "0");
+
+    // 尝试通过现有 blockIds 匹配
+    const existingBlock = newBlock.blockId
+      ? existingMap.get(newBlock.blockId)
+      : undefined;
+
+    if (existingBlock) {
+      matchedIds.add(existingBlock.blockId);
+      const existingPayload = existingBlock.payload;
+      const newPayload = newBlock.payload;
+
+      if (JSON.stringify(existingPayload) !== JSON.stringify(newPayload)) {
+        operations.push({
+          type: "update",
+          blockId: existingBlock.blockId,
+          data: {
+            payload: newPayload,
+            plainText: extractPlainText(newPayload as unknown as TiptapNode),
+          },
+        });
+      }
+    } else {
+      operations.push({
+        type: "create",
+        data: {
+          docId,
+          type: newBlock.type,
+          payload: newBlock.payload,
+          parentId: rootBlockId,
+          sortKey,
+        },
+      });
+    }
+  }
+
+  for (const existing of existingBlocks) {
+    if (!matchedIds.has(existing.blockId)) {
+      operations.push({ type: "delete", blockId: existing.blockId });
+    }
+  }
+
   if (operations.length > 0) {
     await batchOperations(docId, operations);
   }
