@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const rawPath = process.env.NEXT_PUBLIC_DOC_PATH || "/doc";
+const rawPath = process.env.NEXT_PUBLIC_DOC_PATH || "/blog";
 const DOC_PATH = rawPath.startsWith("/") ? rawPath : `/${rawPath}`;
 
 const nextConfig: NextConfig = {

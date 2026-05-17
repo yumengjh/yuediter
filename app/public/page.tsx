@@ -3,7 +3,7 @@ import PublicPageClient from "./PublicPageClient";
 import "./style.css";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://api-zzz.yumgjs.com/api/v1";
-const WORKSPACE_ID = process.env.NEXT_PUBLIC_WORKSPACE_ID || "";
+const WORKSPACE_ID = process.env.NEXT_PUBLIC_WORKSPACE_ID || "ws_1777597341536_714ae45b";
 
 export interface DocItem {
   docId: string;

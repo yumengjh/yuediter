@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { encodeDocId } from "@/lib/doc-slug";
 
-const _raw = process.env.NEXT_PUBLIC_DOC_PATH || "/doc";
+const _raw = process.env.NEXT_PUBLIC_DOC_PATH || "/blog";
 const DOC_PATH = _raw.startsWith("/") ? _raw : `/${_raw}`;
 import { DocItem, WorkspaceInfo, UserInfo } from './page';
 

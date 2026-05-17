@@ -21,6 +21,7 @@ export default function BlockToolbar({ wrapperRef }: BlockToolbarProps) {
   const [menuState, setMenuState] = useState<'closed' | 'open' | 'closing'>('closed');
   const [ready, setReady] = useState(false);
   const [shouldAnimate, setShouldAnimate] = useState(false);
+  const [updateCount, setUpdateCount] = useState(0);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const menuAnchorRef = useRef<HTMLDivElement>(null);
   const prevBlockRef = useRef<HTMLElement | null>(null);
@@ -69,37 +70,127 @@ export default function BlockToolbar({ wrapperRef }: BlockToolbarProps) {
     prevBlockRef.current = hoveredBlock;
   }, [hoveredBlock]);
 
-  const findBlockNode = useCallback((element: HTMLElement | null): HTMLElement | null => {
-    if (!element) return null;
-    let current: HTMLElement | null = element;
-    const editorElement = getEditorDom();
-    if (!editorElement) return null;
-    while (current && current !== editorElement) {
-      if (current.parentElement === editorElement) return current;
-      current = current.parentElement;
-    }
-    return null;
-  }, [getEditorDom]);
+  // const findBlockNode = useCallback((element: HTMLElement | null): HTMLElement | null => {
+  //   if (!element) return null;
+  //   let current: HTMLElement | null = element;
+  //   const editorElement = getEditorDom();
+  //   if (!editorElement) return null;
+  //   while (current && current !== editorElement) {
+  //     // 列表项（普通 / 任务列表）视为独立块
+  //     if (current.tagName === 'LI' || current.dataset.type === 'taskItem') return current;
+  //     if (current.parentElement === editorElement) return current;
+  //     current = current.parentElement;
+  //   }
+  //   return null;
+  // }, [getEditorDom]);
 
-  const updatePosition = useCallback((block: HTMLElement) => {
-    const wrapper = wrapperRef.current;
-    if (!wrapper) return;
-    const blockRect = block.getBoundingClientRect();
-    const wrapperRect = wrapper.getBoundingClientRect();
-    const paddingLeft = parseFloat(getComputedStyle(wrapper).paddingLeft);
-    setPosition({
-      top: blockRect.top - wrapperRect.top + wrapper.scrollTop,
-      left: paddingLeft - 28
-    });
-  }, [wrapperRef]);
+  const findBlockNode = useCallback((element: HTMLElement | null): HTMLElement | null => {
+  if (!editor) return null;
+  if (!element) return null;
+  const editorElement = getEditorDom();
+  if (!editorElement) return null;
+  const { view } = editor;
+
+  let deepest: { el: HTMLElement; depth: number } | null = null;
+  let current: HTMLElement | null = element;
+
+  while (current && current !== editorElement) {
+    try {
+      const pos = view.posAtDOM(current, 0);
+      const $pos = view.state.doc.resolve(pos);
+      const depth = $pos.depth;
+      const node = $pos.node(depth);
+
+      if (node.isBlock && depth >= 1) {
+        // 取深度最大的块（最细粒度）
+        if (!deepest || depth > deepest.depth) {
+          deepest = { el: current, depth };
+        }
+      }
+    } catch { /* 非内容节点，忽略 */ }
+
+    current = current.parentElement;
+  }
+
+  if (deepest) return deepest.el;
+
+  // fallback：顶层直接子元素
+  let topLevel: HTMLElement | null = element;
+  while (topLevel && topLevel.parentElement !== editorElement) {
+    topLevel = topLevel.parentElement;
+  }
+  return topLevel && topLevel !== editorElement ? topLevel : null;
+}, [editor, getEditorDom]);
+
+// ── 误差表：不同块类型需要额外向左退出的空间 ──────────────────
+// 正值 = 在计算出的 contentLeft 基础上再向左多退多少 px
+// 目的是确保工具栏不会压在块的背景/装饰上
+const BLOCK_EXTRA_OFFSET: Record<string, number> = {
+  // 列表项：bullet/数字占位，额外退出
+  LI: 4,
+  // 引用块：左边框 + padding
+  BLOCKQUOTE: 8,
+  // 代码块容器（TipTap 通常渲染为 pre）
+  PRE: 8,
+  // 默认：段落、标题等无装饰块
+  DEFAULT: 0,
+};
+
+// 根据 data-type 属性的额外偏移（TipTap 自定义节点）
+const BLOCK_TYPE_EXTRA_OFFSET: Record<string, number> = {
+  taskItem: 4,      // 任务列表：checkbox 占位
+  callout: 12,      // 高亮/callout 块：有背景 + padding
+  codeBlock: 8,     // 代码块
+  blockquote: 8,
+};
+
+// 句柄宽度（block-handle__btn 的宽度）
+const HANDLE_WIDTH = 20;
+// 句柄与块可视边缘之间的最小间隙
+const MIN_GAP = 4;
+
+const updatePosition = useCallback((block: HTMLElement) => {
+  const wrapper = wrapperRef.current;
+  if (!wrapper) return;
+  const wrapperRect = wrapper.getBoundingClientRect();
+  const blockRect = block.getBoundingClientRect();
+
+  // 1. 块的可视左边缘（含 border）
+  const blockVisualLeft = blockRect.left;
+
+  // 2. 读取块自身的 paddingLeft（部分块用 padding 来给 bullet/装饰留位）
+  const computed = window.getComputedStyle(block);
+  const paddingLeft = parseFloat(computed.paddingLeft) || 0;
+
+  // 3. 从误差表查额外偏移
+  const tagExtra = BLOCK_EXTRA_OFFSET[block.tagName] ?? BLOCK_EXTRA_OFFSET.DEFAULT;
+  const typeExtra = block.dataset.type
+    ? (BLOCK_TYPE_EXTRA_OFFSET[block.dataset.type] ?? 0)
+    : 0;
+  const extra = Math.max(tagExtra, typeExtra);
+
+  // 4. 工具栏 left = 块可视左边缘 - 句柄宽度 - 最小间隙 - 额外偏移
+  //    转换为相对于 wrapper 的坐标
+  const left = Math.max(
+    0,
+    blockVisualLeft - wrapperRect.left + wrapper.scrollLeft
+      - HANDLE_WIDTH - MIN_GAP - extra
+  );
+
+  // 5. top 对齐块的顶部（考虑 paddingTop 让句柄视觉上居中于首行）
+  const computedPaddingTop = parseFloat(computed.paddingTop) || 0;
+  const top =
+    blockRect.top - wrapperRect.top + wrapper.scrollTop + computedPaddingTop;
+
+  setPosition({ top, left });
+}, [wrapperRef]);
 
   useEffect(() => {
     if (!ready) return;
-    const editorElement = getEditorDom();
     const wrapper = wrapperRef.current;
-    if (!editorElement || !wrapper) return;
+    if (!wrapper) return;
 
-    const handleEditorMouseMove = (e: MouseEvent) => {
+    const handleWrapperMouseMove = (e: MouseEvent) => {
       if (isDraggingActiveRef.current) return;
       if (menuVisible) return;
       const block = findBlockNode(e.target as HTMLElement);
@@ -122,11 +213,11 @@ export default function BlockToolbar({ wrapperRef }: BlockToolbarProps) {
       }
     };
 
-    editorElement.addEventListener('mousemove', handleEditorMouseMove);
+    wrapper.addEventListener('mousemove', handleWrapperMouseMove);
     wrapper.addEventListener('mouseleave', handleWrapperMouseLeave);
 
     return () => {
-      editorElement.removeEventListener('mousemove', handleEditorMouseMove);
+      wrapper.removeEventListener('mousemove', handleWrapperMouseMove);
       wrapper.removeEventListener('mouseleave', handleWrapperMouseLeave);
       if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
     };
@@ -138,6 +229,23 @@ export default function BlockToolbar({ wrapperRef }: BlockToolbarProps) {
       hideTimeoutRef.current = null;
     }
   }, []);
+
+  // 编辑器内容变化时重新计算位置（块位置可能已改变）
+  useEffect(() => {
+    if (!editor) return;
+    const onUpdate = () => setUpdateCount(c => c + 1);
+    editor.on('transaction', onUpdate);
+    return () => { editor.off('transaction', onUpdate); };
+  }, [editor]);
+
+  // hoveredBlock 变化或编辑器更新时刷新位置
+  useEffect(() => {
+    if (!hoveredBlock) return;
+    updatePosition(hoveredBlock);
+    const onResize = () => updatePosition(hoveredBlock);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [hoveredBlock, updateCount, updatePosition]);
 
   // 点击外部关闭菜单
   useEffect(() => {
