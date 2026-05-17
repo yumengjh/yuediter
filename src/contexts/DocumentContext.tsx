@@ -34,6 +34,7 @@ interface DocumentContextValue {
   updateDoc: (docId: string, data: { title?: string; icon?: string; visibility?: string }) => Promise<void>;
   publishDoc: (docId: string) => Promise<void>;
   refreshDocs: () => Promise<void>;
+  getBlockId: (domIndex: number) => string | undefined;
 }
 
 const DocumentContext = createContext<DocumentContextValue | null>(null);
@@ -53,6 +54,8 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
   const currentDocRef = useRef<Document | null>(null);
   // 记录最近一次保存的 HTML，用于脏检查
   const lastSavedHtmlRef = useRef<string>("");
+  // 缓存 blockId 映射：DOM 位置索引 → 服务器 blockId
+  const blockIdMapRef = useRef<Map<number, string>>(new Map());
 
   const setWorkspace = useCallback((id: string) => {
     setWorkspaceId(id);
@@ -95,9 +98,11 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
     currentDocRef.current = doc;
   }, []);
 
-  // loadContent：EditorContent 调用，加载指定文档的 HTML
+  // loadContent：EditorContent 调用，加载指定文档的 HTML 和 blockId 映射
   const loadContent = useCallback(async (docId: string): Promise<string> => {
-    const html = await loadDocumentContent(docId);
+    blockIdMapRef.current = new Map();
+    const { html, blockIdMap } = await loadDocumentContent(docId);
+    blockIdMapRef.current = blockIdMap;
     lastSavedHtmlRef.current = html;
     return html;
   }, []);
@@ -157,6 +162,10 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const getBlockId = useCallback((domIndex: number): string | undefined => {
+    return blockIdMapRef.current.get(domIndex);
+  }, []);
+
   return (
     <DocumentContext.Provider
       value={{
@@ -174,6 +183,7 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
         updateDoc,
         publishDoc,
         refreshDocs,
+        getBlockId,
       }}
     >
       {children}

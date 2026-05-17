@@ -1,16 +1,18 @@
+"use client";
+
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { App } from "antd";
 import TurndownService from "turndown";
-import { MarkdownEditor } from "./components/markdown-editor";
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { MarkdownEditor } from "@/components/markdown-editor";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import {
   DocumentProvider,
   useDocument,
-} from "./contexts/DocumentContext";
-import { SetupModal } from "./components/SetupModal";
-import { DocumentHeader } from "./components/DocumentHeader";
-import { useAutoSave } from "./hooks/useAutoSave";
-import { commitVersion } from "./services/document";
-import "./App.css";
+} from "@/contexts/DocumentContext";
+import { SetupModal } from "@/components/SetupModal";
+import { DocumentHeader } from "@/components/DocumentHeader";
+import { useAutoSave } from "@/hooks/useAutoSave";
+import { commitVersion } from "@/services/document";
 
 // ─── Turndown 配置（保留原有逻辑） ───
 
@@ -252,15 +254,12 @@ function EditorContent() {
   const [loadingDoc, setLoadingDoc] = useState(false);
   const [outputModalOpen, setOutputModalOpen] = useState(false);
   const [showTOC, setShowTOC] = useState(false);
-  // 追踪已加载的文档 ID，避免重复加载
   const loadedDocIdRef = useRef<string | null>(null);
 
-  // 检查是否需要显示设置弹窗
   useEffect(() => {
     setSetupOpen(!authed || !workspaceId);
   }, [authed, workspaceId]);
 
-  // 当 currentDoc 变化时加载内容
   useEffect(() => {
     const docId = currentDoc?.docId;
     if (!docId) {
@@ -268,7 +267,6 @@ function EditorContent() {
       loadedDocIdRef.current = null;
       return;
     }
-    // 同一文档已加载，跳过
     if (loadedDocIdRef.current === docId) return;
 
     loadedDocIdRef.current = docId;
@@ -279,17 +277,15 @@ function EditorContent() {
       })
       .catch(() => {
         setHtml(DEFAULT_CONTENT);
-        loadedDocIdRef.current = null; // 允许重试
+        loadedDocIdRef.current = null;
       })
       .finally(() => {
         setLoadingDoc(false);
       });
   }, [currentDoc, loadContent]);
 
-  // 自动保存：文档加载期间禁用
   useAutoSave(html, saveDoc, { delay: 2000, enabled: !loadingDoc });
 
-  // 手动保存：先保存内容，再提交版本
   const handleManualSave = useCallback(async () => {
     try {
       await saveDoc(html);
@@ -319,10 +315,10 @@ function EditorContent() {
 
       {authed && workspaceId && (
         <>
-          <DocumentHeader 
-            onSave={handleManualSave} 
-            showTOC={showTOC} 
-            onToggleTOC={setShowTOC} 
+          <DocumentHeader
+            onSave={handleManualSave}
+            showTOC={showTOC}
+            onToggleTOC={setShowTOC}
           />
           <div className="output-card">
             <MarkdownEditor
@@ -335,7 +331,6 @@ function EditorContent() {
             />
           </div>
 
-          {/* 输出按钮 - 右上角 */}
           <button
             className="output-trigger-btn"
             onClick={() => setOutputModalOpen(true)}
@@ -348,7 +343,6 @@ function EditorContent() {
             <span>输出</span>
           </button>
 
-          {/* 输出弹窗 */}
           {outputModalOpen && (
             <div className="output-modal-overlay" onClick={() => setOutputModalOpen(false)}>
               <div className="output-modal" onClick={(e) => e.stopPropagation()}>
@@ -394,16 +388,16 @@ function EditorContent() {
   );
 }
 
-function App() {
+export default function EditorPage() {
   return (
-    <AuthProvider>
-      <DocumentProvider>
-        <div className="app-container">
-          <EditorContent />
-        </div>
-      </DocumentProvider>
-    </AuthProvider>
+    <App>
+      <AuthProvider>
+        <DocumentProvider>
+          <div className="app-container">
+            <EditorContent />
+          </div>
+        </DocumentProvider>
+      </AuthProvider>
+    </App>
   );
 }
-
-export default App;

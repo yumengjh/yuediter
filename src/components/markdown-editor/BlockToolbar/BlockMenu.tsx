@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from 'react';
-import { Menu } from 'antd';
+import { Menu, message } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   DeleteOutlined,
@@ -11,7 +11,7 @@ import {
   PlusCircleOutlined,
 } from '@ant-design/icons';
 import { useMarkdownEditor } from '../EditorContext';
-import { getDocumentContent, loadDocumentContent } from '../../../services/document';
+import { loadDocumentContent } from '../../../services/document';
 import { useDocument } from '../../../contexts/DocumentContext';
 
 interface BlockMenuProps {
@@ -37,12 +37,12 @@ export function BlockMenu({ onClose, hoveredBlock }: BlockMenuProps) {
     if (!editor || !hoveredBlock) return;
 
     const { view } = editor;
-    const blockEls = Array.from(view.dom.children) as HTMLElement[];
-    const domIndex = blockEls.indexOf(hoveredBlock);
-    if (domIndex < 0) return;
-
-    // 本地删除（非数据库文档直接生效）
     const { doc } = view.state;
+
+    // 从 DOM 属性直接读取 blockId（零网络请求）
+    const blockId = hoveredBlock.dataset.blockId;
+
+    // 本地删除（乐观更新）
     const $pos = doc.resolve(view.posAtDOM(hoveredBlock, 0));
     const from = $pos.before(1);
     const to = $pos.after(1);
@@ -52,37 +52,22 @@ export function BlockMenu({ onClose, hoveredBlock }: BlockMenuProps) {
       view.dispatch(view.state.tr.delete(from, to));
     }
 
-    if (!currentDoc) return;
+    // 非数据库文档或无 blockId，无需同步服务器
+    if (!currentDoc || !blockId) return;
 
+    // 后台同步服务器
     try {
-      // 1. 从服务器获取块列表，通过 DOM 位置匹配 blockId
-      const content = await getDocumentContent(currentDoc.docId);
-      interface FlatBlock { blockId: string; type: string; sortKey: string; children?: FlatBlock[] }
-      const allBlocks: FlatBlock[] = [];
-      if (content.tree) {
-        const walk = (b: FlatBlock) => { allBlocks.push(b); b.children?.forEach(walk); };
-        walk(content.tree as unknown as FlatBlock);
-        allBlocks.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
-      }
-      const contentBlocks = allBlocks.filter((b) => b.type !== 'root');
-
-      if (domIndex >= contentBlocks.length) return;
-
-      // 2. 调用服务器 API 删除
       const { apiPost } = await import('../../../services/api-client');
       await apiPost('/blocks/batch', {
         docId: currentDoc.docId,
-        operations: [{ type: 'delete', blockId: contentBlocks[domIndex].blockId }],
+        operations: [{ type: 'delete', blockId }],
       });
-
-      // 3. 从服务器重新加载内容，替换编辑器（不触发 onChange）
-      const html = await loadDocumentContent(currentDoc.docId);
-      editor.commands.setContent(html || '<p></p>', { emitUpdate: false });
     } catch (err) {
       console.error('[BlockMenu] 删除块失败:', err);
+      message.error("删除失败，已恢复");
       // 回滚：从服务器重新加载内容
       try {
-        const html = await loadDocumentContent(currentDoc.docId);
+        const { html } = await loadDocumentContent(currentDoc.docId);
         editor.commands.setContent(html || '<p></p>', { emitUpdate: false });
       } catch {}
     }
@@ -173,7 +158,7 @@ export function BlockMenu({ onClose, hoveredBlock }: BlockMenuProps) {
     { key: 'moveDown', icon: <ArrowDownOutlined />,  label: '下移',   disabled: !canMoveDown },
   ], [canMoveUp, canMoveDown]);
 
-  const handleClick: MenuProps['onClick'] = useCallback(({ key }) => {
+  const handleClick: MenuProps['onClick'] = useCallback(({ key }: { key: string }) => {
     switch (key) {
       case 'delete':
         deleteBlock();

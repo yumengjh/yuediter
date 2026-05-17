@@ -35,6 +35,7 @@ import { createMarkdownShortcutsExtension } from "./extensions/markdownShortcuts
 import { HighlightBlock } from "./extensions/highlightBlock";
 import HighlightBlockView from "./HighlightBlockView";
 import { Indent } from "./extensions/indent";
+import { BlockIdAttribute } from "./extensions/blockIdAttribute";
 import TaskItemView from "./TaskItemView";
 import { EditorContextProvider } from "./EditorContext";
 import Toolbar from "./Toolbar";
@@ -260,8 +261,10 @@ export default function MarkdownEditor({
           types: ["paragraph", "heading"],
           maxLevel: 8,
         }),
+        BlockIdAttribute,
       ],
       content: content || "<p></p>",
+      immediatelyRender: false,
       autofocus,
       editable,
       editorProps: {

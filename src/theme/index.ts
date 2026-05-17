@@ -56,7 +56,7 @@ export const editorTheme: ThemeConfig = {
       colorTextSecondary: "#666666",
     },
     Tooltip: {
-      colorBgDefault: "#333333",
+      colorBgSpotlight: "#333333",
       colorTextLightSolid: "#ffffff",
     },
   },

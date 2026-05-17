@@ -1,0 +1,47 @@
+.doc-page {
+  background: var(--app-bg-page);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.doc-page .tiptap-shell {
+  background: transparent;
+}
+
+.doc-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--app-text-strong);
+  margin: 0 0 40px;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  border-bottom: 1px solid var(--app-border-lighter);
+  padding-bottom: 24px;
+}
+
+.doc-content {
+  /* tiptap-editor class in editor.css handles the rest */
+}
+
+/* Ensure images and other elements look premium in published doc */
+.doc-content img {
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+/* Override editor-wrapper for page view if needed */
+.doc-page .tiptap-editor-wrapper {
+  margin-top: 48px;
+  margin-bottom: 80px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+}
+
+@media (max-width: 900px) {
+  .doc-page .tiptap-editor-wrapper {
+    margin-top: 0;
+    margin-bottom: 0;
+    box-shadow: none;
+    border: none;
+  }
+}

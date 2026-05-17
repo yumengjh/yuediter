@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import type { ReactNode } from "react";
-import { Dropdown, Tooltip, message, ColorPicker, Divider } from "antd";
+import { Dropdown, Tooltip, App, ColorPicker, Divider } from "antd";
 import type { Editor } from "@tiptap/react";
 import type { Selection } from "prosemirror-state";
 import {
@@ -106,6 +106,7 @@ function OutdentIcon() {
 }
 
 export default function Toolbar() {
+  const { message } = App.useApp();
   const editor = useMarkdownEditor();
   const [linkPopupOpen, setLinkPopupOpen] = useState(false);
   const [linkTextValue, setLinkTextValue] = useState("");

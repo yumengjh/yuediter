@@ -488,36 +488,143 @@
   text-decoration: underline;
 }
 
-/* ---------- 待办列表 ---------- */
-.tiptap-editor ul.task-list {
+/* ---------- 待办列表 — 语雀 & AntD 风格还原 ---------- */
+.tiptap-editor :where(ul[data-type="taskList"], ul.task-list) {
   list-style: none;
-  padding-left: 0;
+  padding-left: 4px;
+  margin: 12px 0;
 }
 
-.tiptap-editor li.task-list-item {
+.tiptap-editor :where(li[data-type="taskItem"], li.task-list-item) {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  list-style: none;
+  margin-bottom: 4px;
 }
 
+/* 展示页：自定义 Checkbox 容器 */
+.tiptap-editor :where(li[data-type="taskItem"]) > label {
+  flex: 0 0 auto;
+  margin-right: 12px;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px; /* 1.74 * 15px ≈ 26px, 确保与首行文字垂直居中 */
+}
+
+/* 编辑器：AntD Checkbox 容器 */
 .tiptap-editor li.task-list-item .ant-checkbox-wrapper {
-  margin-top: 3px;
-  flex-shrink: 0;
+  flex: 0 0 auto;
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+  height: 26px; /* 与行高一致 */
 }
 
-.tiptap-editor li.task-list-item .task-item-content {
-  flex: 1;
+.tiptap-editor :where(li[data-type="taskItem"], li.task-list-item) > div {
+  flex: 1 1 auto;
   min-width: 0;
 }
 
-.tiptap-editor li.task-list-item .task-item-content > p {
+/* 展示页：自定义 Checkbox 样式 (仅作用于非 AntD 的 input) */
+.tiptap-editor :where(li[data-type="taskItem"]) input[type="checkbox"]:not(.ant-checkbox-input) {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1px solid #d9d9d9;
+  border-radius: 2px;
+  background-color: #fff;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   margin: 0;
+  display: block;
+  transform: translateY(-1px); /* 微调视觉居中 */
 }
 
-/* ---------- 高亮 ---------- */
+.tiptap-editor :where(li[data-type="taskItem"]) input[type="checkbox"]:not(.ant-checkbox-input):hover {
+  border-color: #1677ff;
+}
+
+.tiptap-editor :where(li[data-type="taskItem"]) input[type="checkbox"]:not(.ant-checkbox-input):checked {
+  background-color: #1677ff;
+  border-color: #1677ff;
+}
+
+.tiptap-editor :where(li[data-type="taskItem"]) input[type="checkbox"]:not(.ant-checkbox-input):checked::after {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: 4.5px;
+  width: 4px;
+  height: 8px;
+  border: 2px solid #fff;
+  border-top: 0;
+  border-left: 0;
+  transform: rotate(45deg);
+}
+
+/* 在展示页禁用交互（彻底禁止点击切换状态） */
+.doc-content :where(li[data-type="taskItem"], li.task-list-item) {
+  pointer-events: none !important;
+}
+
+.doc-content :where(li[data-type="taskItem"], li.task-list-item) input[type="checkbox"] {
+  cursor: default;
+}
+
+/* ---------- 高亮块 — 语雀风格还原 ---------- */
+/* 兼容 NodeView (编辑时) 和 data-highlight-block (展示时) */
+.tiptap-editor :where(.highlight-block-view, div[data-highlight-block]) {
+  border-radius: 4px;
+  padding: 12px 16px;
+  margin: 16px 0;
+  position: relative;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.highlight-block-view .highlight-block-color-bar {
+  position: absolute;
+  top: -36px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: #ffffff;
+  border: 1px solid var(--app-border-light, #e8e8e8);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.highlight-block-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.1s ease, border-color 0.1s ease;
+  padding: 0;
+}
+
+.highlight-block-swatch:hover {
+  transform: scale(1.15);
+}
+
+.highlight-block-swatch.is-active {
+  border-color: #1677ff;
+}
+
+.tiptap-editor :where(.highlight-block-view, div[data-highlight-block]) p {
+  margin: 0 !important;
+}
+
+/* ---------- 高亮 (Inline Mark) ---------- */
 .tiptap-editor mark {
-  background-color: var(--app-accent-yellow);
+  background-color: #fff2cc;
   color: inherit;
   border-radius: 2px;
   padding: 0 0.1em;
@@ -542,53 +649,7 @@
   max-width: 100%;
   display: block;
   margin: 12px 0;
-}
-
-/* ---------- 高亮块 ---------- */
-.highlight-block-view {
-  border-radius: 6px;
-  padding: 8px 12px;
-  margin: 12px 0;
-  position: relative;
-}
-
-.highlight-block-color-bar {
-  position: absolute;
-  top: -36px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  background: var(--app-bg-card, #fff);
-  border: 1px solid var(--app-border-light, #e8e8e8);
   border-radius: 4px;
-  box-shadow: none;
-  z-index: 10;
-}
-
-.highlight-block-swatch {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: transform 0.1s ease, border-color 0.1s ease;
-  padding: 0;
-}
-
-.highlight-block-swatch:hover {
-  transform: scale(1.15);
-}
-
-.highlight-block-swatch.is-active {
-  border-color: var(--app-primary, #1677ff);
-}
-
-.highlight-block-view .ProseMirror p,
-.highlight-block-view p {
-  margin: 0 !important;
 }
 
 /* ---------- 响应式内边距 ---------- */

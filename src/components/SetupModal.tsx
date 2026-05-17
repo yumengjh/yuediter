@@ -9,7 +9,7 @@ import {
   Space,
   Typography,
   Spin,
-  message,
+  App,
   Avatar,
 } from "antd";
 import {
@@ -33,6 +33,7 @@ interface SetupModalProps {
 }
 
 export function SetupModal({ open, onComplete }: SetupModalProps) {
+  const { message } = App.useApp();
   const { user, isAuthenticated, login, register, error, clearError } =
     useAuth();
   const [step, setStep] = useState<"auth" | "workspace">("auth");

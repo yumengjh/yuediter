@@ -1,5 +1,4 @@
 import { apiGet, apiPost, apiPatch, apiDelete } from "./api-client";
-import { blockCache } from "./block-cache";
 
 // ─── 类型定义 ───
 
@@ -197,10 +196,22 @@ function splitHtmlToTopLevelNodes(html: string): string[] {
   return nodes;
 }
 
-/** 将块数组拼接为完整 HTML */
-function blocksToHtml(blocks: Block[]): string {
+/** 剥离 HTML 字符串中的 data-block-id 属性 */
+function stripDataBlockId(html: string): string {
+  return html.replace(/\s+data-block-id="[^"]*"/g, "");
+}
+
+/** 将块数组拼接为完整 HTML，可选注入 data-block-id 属性 */
+function blocksToHtml(blocks: Block[], blockIdMap?: Map<number, string>): string {
   return blocks
-    .map((b) => (b.payload?.html as string) || "")
+    .map((b, i) => {
+      const html = (b.payload?.html as string) || "";
+      if (!html || !blockIdMap) return html;
+      const blockId = blockIdMap.get(i);
+      if (!blockId) return html;
+      // 在顶级元素的 > 之前注入 data-block-id
+      return html.replace(/^(\s*<[^>\s]+)/, `$1 data-block-id="${blockId}"`);
+    })
     .filter(Boolean)
     .join("");
 }
@@ -221,19 +232,28 @@ function flattenBlockTree(root: Block): Block[] {
   return result;
 }
 
+export interface LoadContentResult {
+  html: string;
+  blockIdMap: Map<number, string>;
+}
+
 /**
- * 加载文档内容，返回完整 HTML 字符串
+ * 加载文档内容，返回 HTML 和 blockId 映射
  */
-export async function loadDocumentContent(docId: string): Promise<string> {
+export async function loadDocumentContent(docId: string): Promise<LoadContentResult> {
   const resp = await getDocumentContent(docId);
-  if (!resp.tree) return "";
+  if (!resp.tree) return { html: "", blockIdMap: new Map() };
 
   const flatBlocks = flattenBlockTree(resp.tree);
   // 过滤掉 root 块，只保留内容块
   const contentBlocks = flatBlocks.filter((b) => b.type !== "root");
-  // 更新块缓存
-  blockCache.set(docId, contentBlocks);
-  return blocksToHtml(contentBlocks);
+
+  // 构建 blockIdMap：index → blockId
+  const blockIdMap = new Map<number, string>();
+  contentBlocks.forEach((b, i) => blockIdMap.set(i, b.blockId));
+
+  const html = blocksToHtml(contentBlocks, blockIdMap);
+  return { html, blockIdMap };
 }
 
 /**
@@ -244,18 +264,14 @@ export async function saveDocumentContent(
   html: string,
   rootBlockId: string,
 ): Promise<void> {
-  // 1. 从缓存获取已有块，缓存为空时 fallback 到 GET
-  let existingBlocks = blockCache.get(docId);
-  if (!existingBlocks) {
-    const resp = await getDocumentContent(docId);
-    existingBlocks = resp.tree
-      ? flattenBlockTree(resp.tree).filter((b) => b.type !== "root")
-      : [];
-    blockCache.set(docId, existingBlocks);
-  }
+  // 1. 获取已有块
+  const resp = await getDocumentContent(docId);
+  const existingBlocks = resp.tree
+    ? flattenBlockTree(resp.tree).filter((b) => b.type !== "root")
+    : [];
 
-  // 2. 解析新 HTML 为顶级节点
-  const newNodes = splitHtmlToTopLevelNodes(html);
+  // 2. 解析新 HTML 为顶级节点，剥离 data-block-id 避免假差异
+  const newNodes = splitHtmlToTopLevelNodes(html).map(stripDataBlockId);
 
   // 3. Diff：逐个对比
   const operations: BatchOperation[] = [];
@@ -295,28 +311,5 @@ export async function saveDocumentContent(
   // 4. 执行批量操作
   if (operations.length > 0) {
     await batchOperations(docId, operations);
-  }
-
-  // 5. 更新缓存
-  const hasCreateOrDelete = operations.some(
-    (op) => op.type === "create" || op.type === "delete",
-  );
-  if (hasCreateOrDelete) {
-    // 有新增/删除操作时，重新加载获取真实的 blockId
-    const resp = await getDocumentContent(docId);
-    const blocks = resp.tree
-      ? flattenBlockTree(resp.tree).filter((b) => b.type !== "root")
-      : [];
-    blockCache.replace(docId, blocks);
-  } else {
-    // 只有 update 操作时，直接更新缓存中的 payload
-    const updatedBlocks = newNodes.map((html, i) => {
-      const existing = existingBlocks[i];
-      if (existing) {
-        return { ...existing, payload: { html } };
-      }
-      return existing!;
-    });
-    blockCache.replace(docId, updatedBlocks);
   }
 }
