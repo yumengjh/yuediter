@@ -50,9 +50,11 @@ export const HighlightBlock = Node.create({
         ({ commands }) => {
           const color =
             options?.backgroundColor || DEFAULT_HIGHLIGHT_BLOCK_COLOR;
-          return commands.insertContent(
-            `<div data-highlight-block="" style="background-color: ${color}"><p></p></div>`,
-          );
+          return commands.insertContent({
+            type: this.name,
+            attrs: { backgroundColor: color },
+            content: [{ type: "paragraph" }],
+          });
         },
       updateHighlightBlockColor:
         (color) =>

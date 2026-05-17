@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, forwardRef, useImperativeHandle } from "react";
 import { useEditor, EditorContent, ReactNodeViewRenderer } from "@tiptap/react";
+import type { Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import CodeBlock from "@tiptap/extension-code-block";
 import Code from "@tiptap/extension-code";
@@ -42,6 +43,17 @@ import Toolbar from "./Toolbar";
 import BlockToolbar from "./BlockToolbar";
 import TableOfContents from "./TableOfContents";
 import "./styles/editor.css";
+
+export interface MarkdownEditorRef {
+  /** 获取 JSON 格式内容 */
+  getJSON: () => object;
+  /** 获取 HTML 格式内容 */
+  getHTML: () => string;
+  /** 获取纯文本内容 */
+  getText: () => string;
+  /** 获取 Tiptap Editor 实例 */
+  getEditor: () => Editor | null;
+}
 
 export interface MarkdownEditorProps {
   /** HTML 内容 */
@@ -87,7 +99,7 @@ function EditorSkeleton() {
   );
 }
 
-export default function MarkdownEditor({
+const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(function MarkdownEditor({
   content = "",
   onChange,
   editable = true,
@@ -101,7 +113,7 @@ export default function MarkdownEditor({
   minHeight = "460px",
   autofocus = false,
   loading = false,
-}: MarkdownEditorProps) {
+}, ref) {
   const [themeMode, setThemeMode] = useState<CodeThemeMode>("light");
   const [shikiHighlighter, setShikiHighlighter] = useState<ShikiHighlighter | null>(null);
   const [shikiReady, setShikiReady] = useState(false);
@@ -303,6 +315,14 @@ export default function MarkdownEditor({
     editor.commands.setContent(content || "<p></p>", { emitUpdate: false });
   }, [content, editor]);
 
+  // 暴露编辑器 API
+  useImperativeHandle(ref, () => ({
+    getJSON: () => editor?.getJSON() ?? {},
+    getHTML: () => editor?.getHTML() ?? "",
+    getText: () => editor?.getText() ?? "",
+    getEditor: () => editor,
+  }), [editor]);
+
   if (!editor || !shikiReady) {
     return (
       <div className="tiptap-shell" style={style}>
@@ -336,4 +356,6 @@ export default function MarkdownEditor({
       </div>
     </div>
   );
-}
+});
+
+export default MarkdownEditor;

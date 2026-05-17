@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { App } from "antd";
 import TurndownService from "turndown";
-import { MarkdownEditor } from "@/components/markdown-editor";
+import { MarkdownEditor, MarkdownEditorRef } from "@/components/markdown-editor";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import {
   DocumentProvider,
@@ -221,7 +221,7 @@ function htmlToMarkdown(html: string): string {
   return turndownService.turndown(html).trim();
 }
 
-type OutputTab = "html" | "markdown";
+type OutputTab = "html" | "markdown" | "json";
 
 // ─── 编辑器主内容区 ───
 
@@ -255,6 +255,7 @@ function EditorContent() {
   const [outputModalOpen, setOutputModalOpen] = useState(false);
   const [showTOC, setShowTOC] = useState(false);
   const loadedDocIdRef = useRef<string | null>(null);
+  const editorRef = useRef<MarkdownEditorRef>(null);
 
   useEffect(() => {
     setSetupOpen(!authed || !workspaceId);
@@ -306,8 +307,13 @@ function EditorContent() {
   );
 
   const markdown = useMemo(() => htmlToMarkdown(html), [html]);
-  const outputContent = activeTab === "html" ? html : markdown;
-  const copyLabel = activeTab === "html" ? "复制 HTML" : "复制 Markdown";
+  const jsonContent = useMemo(() => {
+    if (activeTab !== "json") return "";
+    const json = editorRef.current?.getJSON();
+    return json ? JSON.stringify(json, null, 2) : "{}";
+  }, [activeTab, html]);
+  const outputContent = activeTab === "html" ? html : activeTab === "json" ? jsonContent : markdown;
+  const copyLabel = activeTab === "html" ? "复制 HTML" : activeTab === "json" ? "复制 JSON" : "复制 Markdown";
 
   return (
     <>
@@ -322,6 +328,7 @@ function EditorContent() {
           />
           <div className="output-card">
             <MarkdownEditor
+              ref={editorRef}
               content={html}
               onChange={setHtml}
               placeholder="开始记录你的知识吧…"
@@ -334,7 +341,7 @@ function EditorContent() {
           <button
             className="output-trigger-btn"
             onClick={() => setOutputModalOpen(true)}
-            title="查看 HTML / Markdown"
+            title="查看 HTML / Markdown / JSON"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="16 18 22 12 16 6" />
@@ -359,6 +366,12 @@ function EditorContent() {
                       onClick={() => setActiveTab("html")}
                     >
                       HTML
+                    </button>
+                    <button
+                      className={`output-tab ${activeTab === "json" ? "output-tab--active" : "output-tab--inactive"}`}
+                      onClick={() => setActiveTab("json")}
+                    >
+                      JSON
                     </button>
                   </div>
                   <div className="output-modal-actions">

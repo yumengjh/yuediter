@@ -18,6 +18,9 @@ out
 # Build artifacts
 tsconfig.tsbuildinfo
 
+# npm lock file (project uses pnpm)
+package-lock.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
