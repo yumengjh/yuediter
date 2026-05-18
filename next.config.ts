@@ -1,15 +1,18 @@
 import type { NextConfig } from "next";
 
-const rawPath = process.env.NEXT_PUBLIC_DOC_PATH || "/blog";
-const DOC_PATH = rawPath.startsWith("/") ? rawPath : `/${rawPath}`;
+// ── 构建时调试日志 ──
+console.log("━━━ next.config.ts 构建环境变量 ━━━");
+console.log("  process.env.NEXT_PUBLIC_DOC_PATH =", JSON.stringify(process.env.NEXT_PUBLIC_DOC_PATH));
+console.log("  NODE_ENV =", JSON.stringify(process.env.NODE_ENV));
+console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+// 文档详情页公开路径，硬编码为 /blog
+// 如需修改请改这里 + PublicPageClient.tsx 中的 DOC_PATH
+const DOC_PATH = "/blog";
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
-  env: {
-    NEXT_PUBLIC_DOC_PATH: DOC_PATH,
-  },
   async rewrites() {
-    if (DOC_PATH === "/doc") return [];
     return [
       {
         source: `${DOC_PATH}/:slug`,

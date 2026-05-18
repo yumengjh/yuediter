@@ -3,8 +3,7 @@
 import { useState, useMemo } from 'react';
 import { encodeDocId } from "@/lib/doc-slug";
 
-const _raw = process.env.NEXT_PUBLIC_DOC_PATH || "/blog";
-const DOC_PATH = _raw.startsWith("/") ? _raw : `/${_raw}`;
+const DOC_PATH = "/blog";
 import { DocItem, WorkspaceInfo, UserInfo } from './page';
 
 interface TreeDocItem extends DocItem {
