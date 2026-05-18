@@ -31,3 +31,6 @@ package-lock.json
 *.njsproj
 *.sln
 *.sw?
+
+# Local git worktrees
+.worktrees/
