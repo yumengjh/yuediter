@@ -22,6 +22,8 @@ export interface Document {
   rootBlockId: string;
   head: number;
   publishedHead?: number;
+  tags?: string[];
+  category?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -93,7 +95,9 @@ export async function createDocument(data: {
   workspaceId: string;
   title: string;
   icon?: string;
+  cover?: string;
   visibility?: string;
+  category?: string;
 }): Promise<Document> {
   return apiPost<Document>("/documents", data);
 }
@@ -134,7 +138,15 @@ export async function deleteDocument(docId: string): Promise<void> {
 
 export async function updateDocument(
   docId: string,
-  data: { title?: string; icon?: string; visibility?: string },
+  data: {
+    title?: string;
+    icon?: string;
+    cover?: string;
+    visibility?: string;
+    tags?: string[];
+    category?: string;
+    status?: string;
+  },
 ): Promise<Document> {
   return apiPatch<Document>(`/documents/${docId}`, data);
 }

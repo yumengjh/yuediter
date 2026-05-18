@@ -950,7 +950,7 @@ export default function Toolbar() {
                   <Dropdown
                     placement="bottomLeft"
                     align={{ offset: [0, 4] }}
-                    overlayClassName="toolbar-color-dropdown"
+                    classNames={{ root: "toolbar-color-dropdown" }}
                     onOpenChange={(open) => {
                       if (open) {
                         if (tiptap) {
@@ -958,7 +958,7 @@ export default function Toolbar() {
                         }
                       }
                     }}
-                    dropdownRender={() => (
+                    popupRender={() => (
                       <div className="color-picker-dropdown">
                         <div className="color-picker-section">
                           <div className="color-picker-header">
@@ -1076,8 +1076,8 @@ export default function Toolbar() {
                   <Dropdown
                     placement="bottomLeft"
                     align={{ offset: [0, 4] }}
-                    overlayClassName="toolbar-color-dropdown"
-                    dropdownRender={() => (
+                    classNames={{ root: "toolbar-color-dropdown" }}
+                    popupRender={() => (
                       <div className="color-picker-dropdown" style={{ padding: "8px 10px" }}>
                         <div className="color-picker-section">
                           <div className="color-picker-header">选择背景色</div>
@@ -1135,8 +1135,8 @@ export default function Toolbar() {
                   <Dropdown
                     placement="bottomLeft"
                     align={{ offset: [0, 4] }}
-                    overlayClassName="toolbar-color-dropdown"
-                    dropdownRender={() => (
+                    classNames={{ root: "toolbar-color-dropdown" }}
+                    popupRender={() => (
                       <div className="ant-dropdown-menu" style={{ borderRadius: "4px", border: "1px solid var(--app-border)", boxShadow: "none" }}>
                         <div
                           className={`ant-dropdown-menu-item ${lastIndentAction === "indent" ? "ant-dropdown-menu-item-selected" : ""}`}

@@ -13,6 +13,7 @@ import {
   saveDocumentContentV2,
   getDocument,
   updateDocument as apiUpdateDoc,
+  deleteDocument as apiDeleteDoc,
   publishDocument as apiPublishDoc,
   type Document,
   type EditorContent,
@@ -32,8 +33,9 @@ interface DocumentContextValue {
   selectDoc: (docId: string) => Promise<void>;
   loadContent: (docId: string) => Promise<EditorContent>;
   saveDoc: (content: EditorContent) => Promise<void>;
-  createDoc: (title: string) => Promise<Document>;
-  updateDoc: (docId: string, data: { title?: string; icon?: string; visibility?: string }) => Promise<void>;
+  createDoc: (data: { title: string; icon?: string; cover?: string; visibility?: string; category?: string }) => Promise<Document>;
+  updateDoc: (docId: string, data: { title?: string; icon?: string; cover?: string; visibility?: string; tags?: string[]; category?: string; status?: string }) => Promise<void>;
+  deleteDoc: (docId: string) => Promise<void>;
   publishDoc: (docId: string) => Promise<void>;
   refreshDocs: () => Promise<void>;
   getBlockId: (domIndex: number) => string | undefined;
@@ -132,9 +134,9 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const createDoc = useCallback(
-    async (title: string): Promise<Document> => {
+    async (data: { title: string; icon?: string; cover?: string; visibility?: string; category?: string }): Promise<Document> => {
       if (!workspaceId) throw new Error("未选择工作空间");
-      const doc = await apiCreateDoc({ workspaceId, title });
+      const doc = await apiCreateDoc({ workspaceId, ...data });
       setCurrentDoc(doc);
       currentDocRef.current = doc;
       setDocuments((prev) => [doc, ...prev]);
@@ -144,13 +146,25 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
   );
 
   const updateDoc = useCallback(
-    async (docId: string, data: { title?: string; icon?: string; visibility?: string }) => {
+    async (docId: string, data: { title?: string; icon?: string; cover?: string; visibility?: string; tags?: string[]; category?: string; status?: string }) => {
       const updated = await apiUpdateDoc(docId, data);
       setCurrentDoc(updated);
       currentDocRef.current = updated;
       setDocuments((prev) =>
         prev.map((d) => (d.docId === docId ? updated : d)),
       );
+    },
+    [],
+  );
+
+  const deleteDoc = useCallback(
+    async (docId: string) => {
+      await apiDeleteDoc(docId);
+      if (currentDocRef.current?.docId === docId) {
+        setCurrentDoc(null);
+        currentDocRef.current = null;
+      }
+      setDocuments((prev) => prev.filter((d) => d.docId !== docId));
     },
     [],
   );
@@ -186,6 +200,7 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
         saveDoc,
         createDoc,
         updateDoc,
+        deleteDoc,
         publishDoc,
         refreshDocs,
         getBlockId,

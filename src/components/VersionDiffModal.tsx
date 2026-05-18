@@ -206,7 +206,7 @@ export function VersionDiffModal({ open, onClose, docId }: VersionDiffModalProps
       width="100vw"
       styles={{ body: { padding: 0 } }}
       className="version-diff-modal"
-      destroyOnClose
+      destroyOnHidden
       zIndex={1100}
     >
       <div className="version-diff">

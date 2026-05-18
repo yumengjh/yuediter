@@ -21,12 +21,6 @@
   flex-shrink: 0;
 }
 
-.header-new-doc {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
 .document-header-center {
   flex: 1;
   display: flex;
@@ -78,17 +72,24 @@
   flex-shrink: 0;
 }
 
-.document-header-select .ant-select-selector {
-  border: none !important;
-  box-shadow: none !important;
-  background: transparent !important;
-  font-weight: 500;
-  font-size: 13px;
-}
-
 .document-header-user {
   cursor: default;
   font-size: 11px;
   line-height: 18px;
   margin: 0;
+}
+
+.doc-list-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 200px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.doc-list-trigger__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

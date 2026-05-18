@@ -1,0 +1,9 @@
+/* ─── Document Info Modal ─── */
+
+.doc-info-modal .ant-modal-body {
+  padding: 16px 24px !important;
+}
+
+.doc-info-modal .ant-form-item-label > label {
+  font-size: 13px;
+}

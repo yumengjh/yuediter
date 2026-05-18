@@ -53,12 +53,12 @@ export default function SplitDropdown({
         </button>
       </Tooltip>
       <Dropdown
-        overlayClassName={overlayClassName}
+        classNames={{ root: overlayClassName }}
         trigger={["click"]}
         disabled={disabled}
         open={open}
         onOpenChange={onOpenChange}
-        dropdownRender={() => dropdownContent}
+        popupRender={() => dropdownContent}
       >
         <button
           type="button"

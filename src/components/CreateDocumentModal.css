@@ -1,0 +1,9 @@
+/* ─── Create Document Modal ─── */
+
+.create-doc-modal .ant-modal-body {
+  padding: 16px 24px !important;
+}
+
+.create-doc-modal .ant-form-item-label > label {
+  font-size: 13px;
+}

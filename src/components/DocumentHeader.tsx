@@ -12,7 +12,6 @@ import {
 } from "antd";
 import {
   SaveOutlined,
-  PlusOutlined,
   CheckCircleOutlined,
   ExclamationCircleOutlined,
   LogoutOutlined,
@@ -23,9 +22,14 @@ import {
   TeamOutlined,
   GlobalOutlined,
   HistoryOutlined,
+  InfoCircleOutlined,
+  MenuOutlined,
 } from "@ant-design/icons";
 import { useDocument } from "../contexts/DocumentContext";
 import { VersionDiffModal } from "./VersionDiffModal";
+import { DocumentListModal } from "./DocumentListModal";
+import { CreateDocumentModal } from "./CreateDocumentModal";
+import { DocumentInfoModal } from "./DocumentInfoModal";
 import { useAuth } from "../contexts/AuthContext";
 import "./DocumentHeader.css";
 
@@ -40,19 +44,14 @@ interface DocumentHeaderProps {
 export function DocumentHeader({ onSave, showTOC, onToggleTOC }: DocumentHeaderProps) {
   const {
     currentDoc,
-    documents,
     saveStatus,
     lastSavedAt,
     selectDoc,
-    createDoc,
     updateDoc,
     publishDoc,
     refreshDocs,
   } = useDocument();
   const { user, logout } = useAuth();
-  const [newDocTitle, setNewDocTitle] = useState("");
-  const [creating, setCreating] = useState(false);
-  const [showNewInput, setShowNewInput] = useState(false);
 
   // 标题编辑
   const [editingTitle, setEditingTitle] = useState(false);
@@ -62,6 +61,11 @@ export function DocumentHeader({ onSave, showTOC, onToggleTOC }: DocumentHeaderP
   const [publishing, setPublishing] = useState(false);
   const [visibilityChanging, setVisibilityChanging] = useState(false);
   const [diffOpen, setDiffOpen] = useState(false);
+
+  // 弹窗状态
+  const [listOpen, setListOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
 
   useEffect(() => {
     refreshDocs().catch(() => {});
@@ -84,21 +88,6 @@ export function DocumentHeader({ onSave, showTOC, onToggleTOC }: DocumentHeaderP
     },
     [selectDoc],
   );
-
-  const handleCreateDoc = useCallback(async () => {
-    const title = newDocTitle.trim() || "无标题文档";
-    setCreating(true);
-    try {
-      await createDoc(title);
-      setNewDocTitle("");
-      setShowNewInput(false);
-      message.success("文档创建成功");
-    } catch {
-      message.error("创建文档失败");
-    } finally {
-      setCreating(false);
-    }
-  }, [newDocTitle, createDoc]);
 
   const startEditTitle = useCallback(() => {
     if (!currentDoc) return;
@@ -194,59 +183,22 @@ export function DocumentHeader({ onSave, showTOC, onToggleTOC }: DocumentHeaderP
   return (
     <div className="document-header">
       <div className="document-header-left">
-        <Select
-          className="document-header-select"
-          placeholder="选择文档"
-          value={currentDoc?.docId}
-          onChange={handleDocChange}
-          options={documents.map((d) => ({
-            label: d.title,
-            value: d.docId,
-          }))}
-          style={{ minWidth: 160 }}
-          showSearch
-          optionFilterProp="label"
-          notFoundContent="暂无文档"
-        />
-        {showNewInput ? (
-          <div className="header-new-doc">
-            <Input
-              placeholder="文档标题"
-              value={newDocTitle}
-              onChange={(e) => setNewDocTitle(e.target.value)}
-              onPressEnter={handleCreateDoc}
-              size="small"
-              style={{ width: 140 }}
-              autoFocus
-            />
-            <Button
-              type="primary"
-              size="small"
-              loading={creating}
-              onClick={handleCreateDoc}
-            >
-              创建
-            </Button>
-            <Button
-              size="small"
-              onClick={() => {
-                setShowNewInput(false);
-                setNewDocTitle("");
-              }}
-            >
-              取消
-            </Button>
-          </div>
-        ) : (
-          <Tooltip title="新建文档">
-            <Button
-              type="text"
-              icon={<PlusOutlined />}
-              size="small"
-              onClick={() => setShowNewInput(true)}
-            />
-          </Tooltip>
-        )}
+        <Button
+          type="text"
+          className="doc-list-trigger"
+          onClick={() => setListOpen(true)}
+          icon={<MenuOutlined style={{ fontSize: 14 }} />}
+          size="small"
+        >
+          {currentDoc?.icon ? (
+            <span>{currentDoc.icon}</span>
+          ) : (
+            <FileTextOutlined style={{ fontSize: 13, opacity: 0.5 }} />
+          )}
+          <span className="doc-list-trigger__title">
+            {currentDoc?.title || "选择文档"}
+          </span>
+        </Button>
       </div>
 
       <div className="document-header-center">
@@ -318,6 +270,14 @@ export function DocumentHeader({ onSave, showTOC, onToggleTOC }: DocumentHeaderP
                 onClick={() => setDiffOpen(true)}
               />
             </Tooltip>
+            <Tooltip title="文档信息">
+              <Button
+                type="text"
+                icon={<InfoCircleOutlined />}
+                size="small"
+                onClick={() => setInfoOpen(true)}
+              />
+            </Tooltip>
           </>
         )}
         {saveStatusLabel[saveStatus]}
@@ -360,6 +320,30 @@ export function DocumentHeader({ onSave, showTOC, onToggleTOC }: DocumentHeaderP
           open={diffOpen}
           onClose={() => setDiffOpen(false)}
           docId={currentDoc.docId}
+        />
+      )}
+      <DocumentListModal
+        open={listOpen}
+        onClose={() => setListOpen(false)}
+        onSelect={(docId) => {
+          setListOpen(false);
+          handleDocChange(docId);
+        }}
+        onCreateNew={() => {
+          setListOpen(false);
+          setCreateOpen(true);
+        }}
+        currentDocId={currentDoc?.docId}
+      />
+      <CreateDocumentModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+      />
+      {currentDoc && (
+        <DocumentInfoModal
+          open={infoOpen}
+          onClose={() => setInfoOpen(false)}
+          doc={currentDoc}
         />
       )}
     </div>
