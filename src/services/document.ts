@@ -225,7 +225,7 @@ function blocksToHtml(blocks: Block[], blockIdMap?: Map<number, string>): string
 }
 
 /** 从根块递归展平为排序后的数组（包含根块自身） */
-function flattenBlockTree(root: Block): Block[] {
+export function flattenBlockTree(root: Block): Block[] {
   const result: Block[] = [root];
   function walk(block: Block) {
     if (block.children?.length) {
@@ -442,4 +442,93 @@ async function saveJsonContent(
   if (operations.length > 0) {
     await batchOperations(docId, operations);
   }
+}
+
+// ─── 修订历史 / Diff API ───
+
+export interface Revision {
+  revisionId: string;
+  docVer: number;
+  message: string;
+  createdAt: string;
+  createdBy: string;
+}
+
+export interface RevisionsResponse {
+  items: Revision[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface DiffChange {
+  type: "added" | "deleted" | "modified" | "moved" | "reordered" | "indent-changed";
+  blockId: string;
+  from?: {
+    ver: number;
+    type: string;
+    payload: Record<string, unknown>;
+    parentId: string;
+    sortKey: string;
+    indent: number;
+    hash: string;
+  };
+  to?: {
+    ver: number;
+    type: string;
+    payload: Record<string, unknown>;
+    parentId: string;
+    sortKey: string;
+    indent: number;
+    hash: string;
+  };
+}
+
+export interface DiffSummary {
+  added: number;
+  deleted: number;
+  modified: number;
+  moved: number;
+  reordered: number;
+  indentChanged: number;
+  unchanged: number;
+}
+
+export interface DiffResponse {
+  docId: string;
+  fromVer: number;
+  toVer: number;
+  summary: DiffSummary;
+  changes: DiffChange[];
+  fromContent: { tree: Block; totalBlocks: number; returnedBlocks: number; hasMore: boolean };
+  toContent: { tree: Block; totalBlocks: number; returnedBlocks: number; hasMore: boolean };
+}
+
+export async function getRevisions(
+  docId: string,
+  page = 1,
+  pageSize = 100,
+): Promise<RevisionsResponse> {
+  return apiGet<RevisionsResponse>(
+    `/documents/${docId}/revisions?page=${page}&pageSize=${pageSize}`,
+  );
+}
+
+export async function getVersionContent(
+  docId: string,
+  version: number,
+): Promise<DocumentContentResponse> {
+  return apiGet<DocumentContentResponse>(
+    `/documents/${docId}/content?version=${version}`,
+  );
+}
+
+export async function getVersionDiff(
+  docId: string,
+  fromVer: number,
+  toVer: number,
+): Promise<DiffResponse> {
+  return apiGet<DiffResponse>(
+    `/documents/${docId}/diff?fromVer=${fromVer}&toVer=${toVer}`,
+  );
 }

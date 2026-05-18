@@ -22,8 +22,10 @@ import {
   LockOutlined,
   TeamOutlined,
   GlobalOutlined,
+  HistoryOutlined,
 } from "@ant-design/icons";
 import { useDocument } from "../contexts/DocumentContext";
+import { VersionDiffModal } from "./VersionDiffModal";
 import { useAuth } from "../contexts/AuthContext";
 import "./DocumentHeader.css";
 
@@ -59,6 +61,7 @@ export function DocumentHeader({ onSave, showTOC, onToggleTOC }: DocumentHeaderP
   const titleInputRef = useRef<HTMLInputElement>(null);
   const [publishing, setPublishing] = useState(false);
   const [visibilityChanging, setVisibilityChanging] = useState(false);
+  const [diffOpen, setDiffOpen] = useState(false);
 
   useEffect(() => {
     refreshDocs().catch(() => {});
@@ -307,6 +310,14 @@ export function DocumentHeader({ onSave, showTOC, onToggleTOC }: DocumentHeaderP
                 发布
               </Button>
             </Tooltip>
+            <Tooltip title="版本对比">
+              <Button
+                type="text"
+                icon={<HistoryOutlined />}
+                size="small"
+                onClick={() => setDiffOpen(true)}
+              />
+            </Tooltip>
           </>
         )}
         {saveStatusLabel[saveStatus]}
@@ -344,6 +355,13 @@ export function DocumentHeader({ onSave, showTOC, onToggleTOC }: DocumentHeaderP
           />
         </Tooltip>
       </div>
+      {currentDoc && (
+        <VersionDiffModal
+          open={diffOpen}
+          onClose={() => setDiffOpen(false)}
+          docId={currentDoc.docId}
+        />
+      )}
     </div>
   );
 }
