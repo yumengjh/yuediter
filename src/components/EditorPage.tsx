@@ -18,6 +18,7 @@ import {
   type EditorContent,
 } from "@/services/document";
 import { useDocumentSync } from "@/hooks/useDocumentSync";
+import { shouldEnableLegacyAutoSave } from "@/services/save-policy";
 import { generateHTML } from "@tiptap/core";
 import { serializationExtensions } from "@/services/tiptap-extensions";
 import type { TiptapDoc } from "@/services/tiptap-converter";
@@ -279,6 +280,7 @@ function EditorContent() {
   } =
     useDocument();
   const [content, setContent] = useState<EditorContent>(DEFAULT_CONTENT);
+  const [contentDirty, setContentDirty] = useState(false);
   const [activeTab, setActiveTab] = useState<OutputTab>("markdown");
   const [setupOpen, setSetupOpen] = useState(false);
   const [loadingDoc, setLoadingDoc] = useState(false);
@@ -286,6 +288,7 @@ function EditorContent() {
   const [showTOC, setShowTOC] = useState(false);
   const syncEngineEnabled = process.env.NEXT_PUBLIC_SYNC_ENGINE_ENABLED === "true";
   const loadedDocIdRef = useRef<string | null>(null);
+  const contentRef = useRef<EditorContent>(content);
   const editorRef = useRef<MarkdownEditorRef>(null);
   const tiptapContent = typeof content === "object" && content?.type === "doc"
     ? (content as TiptapDoc)
@@ -299,6 +302,10 @@ function EditorContent() {
   });
 
   useEffect(() => {
+    contentRef.current = content;
+  }, [content]);
+
+  useEffect(() => {
     setSetupOpen(!authed || !workspaceId);
   }, [authed, workspaceId]);
 
@@ -306,6 +313,7 @@ function EditorContent() {
     const docId = currentDoc?.docId;
     if (!docId) {
       setContent(DEFAULT_CONTENT);
+      setContentDirty(false);
       setSaveStatus("idle");
       loadedDocIdRef.current = null;
       return;
@@ -314,13 +322,16 @@ function EditorContent() {
 
     loadedDocIdRef.current = docId;
     setLoadingDoc(true);
+    setContentDirty(false);
     loadContent(docId)
       .then((loaded) => {
         setContent(loaded.content || DEFAULT_CONTENT);
+        setContentDirty(false);
         setSaveStatus("saved");
       })
       .catch(() => {
         setContent(DEFAULT_CONTENT);
+        setContentDirty(false);
         loadedDocIdRef.current = null;
       })
       .finally(() => {
@@ -330,16 +341,34 @@ function EditorContent() {
 
   const saveLegacyContent = useCallback(async (nextContent: EditorContent) => {
     if (!currentDoc) return;
+    if (typeof nextContent !== "string") {
+      setSaveStatus("error");
+      throw new Error("旧版自动保存只支持 HTML 文档；TipTap JSON 文档需要启用 NEXT_PUBLIC_SYNC_ENGINE_ENABLED=true");
+    }
     setSaveStatus("flushing");
     await saveDocumentContentV2(currentDoc.docId, nextContent, currentDoc.rootBlockId);
+    if (contentRef.current === nextContent) {
+      setContentDirty(false);
+    }
     setSaveStatus("saved");
     markSavedAt(new Date());
   }, [currentDoc, markSavedAt, setSaveStatus]);
 
   useAutoSave(content, saveLegacyContent, {
     delay: 1500,
-    enabled: !loadingDoc && !syncEngineEnabled && Boolean(currentDoc),
+    enabled: shouldEnableLegacyAutoSave({
+      syncEngineEnabled,
+      loadingDoc,
+      hasCurrentDoc: Boolean(currentDoc),
+      contentDirty,
+      content,
+    }),
   });
+
+  const handleEditorChange = useCallback((nextContent: EditorContent) => {
+    setContent(nextContent);
+    setContentDirty(true);
+  }, []);
 
   useEffect(() => {
     if (!syncEngineEnabled) return;
@@ -425,7 +454,7 @@ function EditorContent() {
             <MarkdownEditor
               ref={editorRef}
               content={content}
-              onChange={setContent}
+              onChange={handleEditorChange}
               placeholder="开始记录你的知识吧…"
               showTOC={showTOC}
               onTOCToggle={setShowTOC}
