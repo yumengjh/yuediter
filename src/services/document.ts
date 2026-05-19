@@ -345,14 +345,14 @@ export type EditorContent = string | TiptapDoc;
  */
 export async function loadDocumentContentV2(
   docId: string,
-): Promise<{ content: EditorContent; blockIds: string[] }> {
+): Promise<{ content: EditorContent; blockIds: string[]; docVer: number }> {
   const resp = await getDocumentContent(docId);
-  if (!resp.tree) return { content: "", blockIds: [] };
+  if (!resp.tree) return { content: "", blockIds: [], docVer: resp.docVer };
 
   const flatBlocks = flattenBlockTree(resp.tree);
   const contentBlocks = flatBlocks.filter((b) => b.type !== "root");
 
-  if (contentBlocks.length === 0) return { content: "", blockIds: [] };
+  if (contentBlocks.length === 0) return { content: "", blockIds: [], docVer: resp.docVer };
 
   const blockIds = contentBlocks.map((b) => b.blockId);
 
@@ -361,12 +361,12 @@ export async function loadDocumentContentV2(
     const blockIdMap = new Map<number, string>();
     contentBlocks.forEach((b, i) => blockIdMap.set(i, b.blockId));
     const html = blocksToHtml(contentBlocks, blockIdMap);
-    return { content: html, blockIds };
+    return { content: html, blockIds, docVer: resp.docVer };
   }
 
   // 新格式：重组为 Tiptap JSON
   const tiptapDoc = blocksToTiptapJson(contentBlocks);
-  return { content: tiptapDoc, blockIds };
+  return { content: tiptapDoc, blockIds, docVer: resp.docVer };
 }
 
 /**
@@ -383,7 +383,9 @@ export async function saveDocumentContentV2(
     await saveDocumentContent(docId, content, rootBlockId);
     return;
   }
-  await saveJsonContent(docId, content, rootBlockId);
+  throw new Error(
+    "saveDocumentContentV2 is no longer the autosync path for TipTap JSON documents",
+  );
 }
 
 /** JSON 保存路径：基于 blockId 精确匹配 diff */
@@ -421,7 +423,10 @@ async function saveJsonContent(
       const existingPayload = existingBlock.payload;
       const newPayload = newBlock.payload;
 
-      if (JSON.stringify(existingPayload) !== JSON.stringify(newPayload)) {
+      if (
+        createPayloadFingerprint(existingPayload) !==
+        createPayloadFingerprint(newPayload)
+      ) {
         operations.push({
           type: "update",
           blockId: existingBlock.blockId,
@@ -454,6 +459,42 @@ async function saveJsonContent(
   if (operations.length > 0) {
     await batchOperations(docId, operations);
   }
+}
+
+function createPayloadFingerprint(payload: unknown): string {
+  const normalized = normalizePayload(payload);
+  return JSON.stringify(normalized);
+}
+
+function normalizePayload(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizePayload(item));
+  }
+
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  const raw = value as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+
+  const keys = Object.keys(raw).sort((a, b) => a.localeCompare(b));
+  for (const key of keys) {
+    const next = normalizePayload(raw[key]);
+    if (next === undefined) continue;
+    out[key] = next;
+  }
+
+  if (out.attrs && typeof out.attrs === "object" && !Array.isArray(out.attrs)) {
+    const attrs = { ...(out.attrs as Record<string, unknown>) };
+    delete attrs.blockId;
+    delete attrs.clientId;
+    delete attrs["data-block-id"];
+    delete attrs["data-client-id"];
+    out.attrs = attrs;
+  }
+
+  return out;
 }
 
 // ─── 修订历史 / Diff API ───

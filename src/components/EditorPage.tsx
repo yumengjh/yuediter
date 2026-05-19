@@ -12,7 +12,12 @@ import {
 import { SetupModal } from "@/components/SetupModal";
 import { DocumentHeader } from "@/components/DocumentHeader";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import { commitVersion, type EditorContent } from "@/services/document";
+import {
+  commitVersion,
+  saveDocumentContentV2,
+  type EditorContent,
+} from "@/services/document";
+import { useDocumentSync } from "@/hooks/useDocumentSync";
 import { generateHTML } from "@tiptap/core";
 import { serializationExtensions } from "@/services/tiptap-extensions";
 import type { TiptapDoc } from "@/services/tiptap-converter";
@@ -263,7 +268,15 @@ const DEFAULT_CONTENT: TiptapDoc = {
 
 function EditorContent() {
   const { isAuthenticated: authed } = useAuth();
-  const { currentDoc, loadContent, saveDoc, workspaceId, setWorkspace } =
+  const {
+    currentDoc,
+    currentDocVersion,
+    loadContent,
+    workspaceId,
+    setWorkspace,
+    setSaveStatus,
+    markSavedAt,
+  } =
     useDocument();
   const [content, setContent] = useState<EditorContent>(DEFAULT_CONTENT);
   const [activeTab, setActiveTab] = useState<OutputTab>("markdown");
@@ -271,8 +284,19 @@ function EditorContent() {
   const [loadingDoc, setLoadingDoc] = useState(false);
   const [outputModalOpen, setOutputModalOpen] = useState(false);
   const [showTOC, setShowTOC] = useState(false);
+  const syncEngineEnabled = process.env.NEXT_PUBLIC_SYNC_ENGINE_ENABLED === "true";
   const loadedDocIdRef = useRef<string | null>(null);
   const editorRef = useRef<MarkdownEditorRef>(null);
+  const tiptapContent = typeof content === "object" && content?.type === "doc"
+    ? (content as TiptapDoc)
+    : null;
+  const sync = useDocumentSync({
+    docId: syncEngineEnabled ? currentDoc?.docId ?? null : null,
+    rootBlockId: syncEngineEnabled ? currentDoc?.rootBlockId ?? null : null,
+    baseVersion: syncEngineEnabled ? currentDocVersion : null,
+    content: syncEngineEnabled ? tiptapContent : null,
+    onContentPatched: (doc) => setContent(doc),
+  });
 
   useEffect(() => {
     setSetupOpen(!authed || !workspaceId);
@@ -282,6 +306,7 @@ function EditorContent() {
     const docId = currentDoc?.docId;
     if (!docId) {
       setContent(DEFAULT_CONTENT);
+      setSaveStatus("idle");
       loadedDocIdRef.current = null;
       return;
     }
@@ -291,7 +316,8 @@ function EditorContent() {
     setLoadingDoc(true);
     loadContent(docId)
       .then((loaded) => {
-        setContent(loaded || DEFAULT_CONTENT);
+        setContent(loaded.content || DEFAULT_CONTENT);
+        setSaveStatus("saved");
       })
       .catch(() => {
         setContent(DEFAULT_CONTENT);
@@ -302,18 +328,68 @@ function EditorContent() {
       });
   }, [currentDoc, loadContent]);
 
-  useAutoSave(content, saveDoc, { delay: 2000, enabled: !loadingDoc });
+  const saveLegacyContent = useCallback(async (nextContent: EditorContent) => {
+    if (!currentDoc) return;
+    setSaveStatus("flushing");
+    await saveDocumentContentV2(currentDoc.docId, nextContent, currentDoc.rootBlockId);
+    setSaveStatus("saved");
+    markSavedAt(new Date());
+  }, [currentDoc, markSavedAt, setSaveStatus]);
+
+  useAutoSave(content, saveLegacyContent, {
+    delay: 1500,
+    enabled: !loadingDoc && !syncEngineEnabled && Boolean(currentDoc),
+  });
+
+  useEffect(() => {
+    if (!syncEngineEnabled) return;
+    setSaveStatus(sync.uiSaveStatus);
+  }, [setSaveStatus, sync.uiSaveStatus, syncEngineEnabled]);
+
+  useEffect(() => {
+    if (!syncEngineEnabled) return;
+    if (typeof content === "string") return;
+    if (loadingDoc) return;
+    if (sync.uiSaveStatus !== "dirty") return;
+    const timer = window.setTimeout(() => {
+      void sync.flush("autosync");
+    }, 1000);
+    return () => window.clearTimeout(timer);
+  }, [content, loadingDoc, sync, sync.uiSaveStatus, syncEngineEnabled]);
 
   const handleManualSave = useCallback(async () => {
     try {
-      await saveDoc(content);
-      if (currentDoc) {
-        await commitVersion(currentDoc.docId, "手动保存");
+      if (!currentDoc) return;
+      if (!syncEngineEnabled || typeof content === "string") {
+        await saveLegacyContent(content);
+      } else {
+        const ok = await sync.flushAndCommitBarrier();
+        if (!ok) {
+          setSaveStatus("error");
+          return;
+        }
       }
+      await commitVersion(currentDoc.docId, "手动保存");
+      if (syncEngineEnabled) {
+        const loaded = await loadContent(currentDoc.docId);
+        setContent(loaded.content || DEFAULT_CONTENT);
+      }
+      markSavedAt(new Date());
+      setSaveStatus("saved");
     } catch (e) {
       console.error("手动保存失败:", e);
+      setSaveStatus("error");
     }
-  }, [saveDoc, content, currentDoc]);
+  }, [
+    sync,
+    currentDoc,
+    content,
+    markSavedAt,
+    setSaveStatus,
+    syncEngineEnabled,
+    saveLegacyContent,
+    loadContent,
+  ]);
 
   const handleSetupComplete = useCallback(
     (wsId: string) => {

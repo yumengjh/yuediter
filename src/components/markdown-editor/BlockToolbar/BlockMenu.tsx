@@ -6,8 +6,6 @@ import {
   ArrowUpOutlined, ArrowDownOutlined, ClearOutlined, PlusCircleOutlined,
 } from '@ant-design/icons';
 import { useMarkdownEditor } from '../EditorContext';
-import { loadDocumentContentV2 } from '../../../services/document';
-import { useDocument } from '../../../contexts/DocumentContext';
 
 interface BlockMenuProps {
   onClose: () => void;
@@ -42,7 +40,6 @@ function getTopLevelAncestor(
 
 export function BlockMenu({ onClose, hoveredBlock }: BlockMenuProps) {
   const editor = useMarkdownEditor();
-  const { currentDoc } = useDocument();
 
   const canMoveUp = useMemo(() => {
     if (!editor || !hoveredBlock) return false;
@@ -99,23 +96,10 @@ export function BlockMenu({ onClose, hoveredBlock }: BlockMenuProps) {
       view.dispatch(view.state.tr.delete(from, to));
     }
 
-    if (!currentDoc || !blockId) return;
-
-    try {
-      const { apiPost } = await import('../../../services/api-client');
-      await apiPost('/blocks/batch', {
-        docId: currentDoc.docId,
-        operations: [{ type: 'delete', blockId }],
-      });
-    } catch (err) {
-      console.error('[BlockMenu] 删除块失败:', err);
-      message.error('删除失败，已恢复');
-      try {
-        const { content } = await loadDocumentContentV2(currentDoc.docId);
-        editor.commands.setContent(content || '<p></p>', { emitUpdate: false });
-      } catch {}
+    if (blockId) {
+      message.success('块已删除，等待自动同步');
     }
-  }, [editor, hoveredBlock, currentDoc]);
+  }, [editor, hoveredBlock]);
 
   const copyBlock = useCallback(async () => {
     if (!hoveredBlock) return;

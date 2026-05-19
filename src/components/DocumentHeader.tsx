@@ -149,11 +149,19 @@ export function DocumentHeader({ onSave, showTOC, onToggleTOC }: DocumentHeaderP
 
   const saveStatusLabel = {
     idle: null,
-    saving: (
+    dirty: (
+      <Space size={4}>
+        <ExclamationCircleOutlined style={{ color: "#faad14", fontSize: 11 }} />
+        <Text type="warning" style={{ fontSize: 11 }}>
+          未同步
+        </Text>
+      </Space>
+    ),
+    flushing: (
       <Space size={4}>
         <Spin size="small" />
         <Text type="secondary" style={{ fontSize: 11 }}>
-          保存中...
+          同步中...
         </Text>
       </Space>
     ),
@@ -165,8 +173,8 @@ export function DocumentHeader({ onSave, showTOC, onToggleTOC }: DocumentHeaderP
             ? `${lastSavedAt.getHours().toString().padStart(2, "0")}:${lastSavedAt
                 .getMinutes()
                 .toString()
-                .padStart(2, "0")} 已保存`
-            : "已保存"}
+                .padStart(2, "0")} 已同步到草稿`
+            : "已同步到草稿"}
         </Text>
       </Space>
     ),
@@ -295,7 +303,7 @@ export function DocumentHeader({ onSave, showTOC, onToggleTOC }: DocumentHeaderP
             icon={<SaveOutlined />}
             size="small"
             onClick={onSave}
-            disabled={saveStatus === "saving"}
+            disabled={saveStatus === "flushing"}
           />
         </Tooltip>
         <Tag

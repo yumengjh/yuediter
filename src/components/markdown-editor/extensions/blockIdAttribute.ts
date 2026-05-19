@@ -1,4 +1,5 @@
 import { Extension } from "@tiptap/core";
+import { BLOCK_IDENTITY_NODE_TYPES } from "@/services/sync/identity";
 
 /**
  * 为所有块级节点注册 data-block-id 全局属性，
@@ -10,24 +11,32 @@ export const BlockIdAttribute = Extension.create({
   addGlobalAttributes() {
     return [
       {
-        types: [
-          "paragraph",
-          "heading",
-          "codeBlock",
-          "blockquote",
-          "listItem",
-          "tableCell",
-          "tableHeader",
-          "taskItem",
-          "highlightBlock",
-        ],
+        types: [...BLOCK_IDENTITY_NODE_TYPES],
         attributes: {
-          "data-block-id": {
+          blockId: {
             default: null,
-            parseHTML: (element) => element.getAttribute("data-block-id"),
+            parseHTML: (element) =>
+              element.getAttribute("blockId") ?? element.getAttribute("data-block-id"),
             renderHTML: (attributes) => {
-              if (!attributes["data-block-id"]) return {};
-              return { "data-block-id": attributes["data-block-id"] };
+              const blockId = attributes.blockId ?? attributes["data-block-id"];
+              if (!blockId) return {};
+              return {
+                blockId,
+                "data-block-id": blockId,
+              };
+            },
+          },
+          clientId: {
+            default: null,
+            parseHTML: (element) =>
+              element.getAttribute("clientId") ?? element.getAttribute("data-client-id"),
+            renderHTML: (attributes) => {
+              const clientId = attributes.clientId ?? attributes["data-client-id"];
+              if (!clientId) return {};
+              return {
+                clientId,
+                "data-client-id": clientId,
+              };
             },
           },
         },

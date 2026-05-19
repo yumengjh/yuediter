@@ -43,6 +43,8 @@ import { EditorContextProvider } from "./EditorContext";
 import Toolbar from "./Toolbar";
 import BlockToolbar from "./BlockToolbar";
 import TableOfContents from "./TableOfContents";
+import { ensureDocumentIdentity } from "@/services/sync/identity";
+import type { TiptapDoc } from "@/services/tiptap-converter";
 import "./styles/editor.css";
 
 export interface MarkdownEditorRef {
@@ -115,22 +117,20 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(functi
   autofocus = false,
   loading = false,
 }, ref) {
-  const [themeMode, setThemeMode] = useState<CodeThemeMode>("light");
+  const [systemThemeMode, setSystemThemeMode] = useState<CodeThemeMode>("light");
+  const themeMode = themeProp ?? systemThemeMode;
   const [shikiHighlighter, setShikiHighlighter] = useState<ShikiHighlighter | null>(null);
   const [shikiReady, setShikiReady] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   // 主题检测
   useEffect(() => {
-    if (themeProp) {
-      setThemeMode(themeProp);
-      return;
-    }
+    if (themeProp) return;
 
     if (typeof window === "undefined") return;
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const applyTheme = (matches: boolean) => {
-      setThemeMode(matches ? "dark" : "light");
+      setSystemThemeMode(matches ? "dark" : "light");
     };
 
     applyTheme(media.matches);
@@ -187,8 +187,14 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(functi
   const handleUpdate = useCallback(
     ({ editor: ed }: { editor: import("@tiptap/core").Editor }) => {
       if (!onChange) return;
-      const json = ed.getJSON() as EditorContentType;
-      onChange(json);
+      const rawJson = ed.getJSON() as TiptapDoc;
+      const jsonWithIdentity = ensureDocumentIdentity(rawJson);
+
+      if (jsonWithIdentity !== rawJson) {
+        ed.commands.setContent(jsonWithIdentity, { emitUpdate: false });
+      }
+
+      onChange(jsonWithIdentity as EditorContentType);
     },
     [onChange],
   );
