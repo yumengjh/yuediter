@@ -119,6 +119,12 @@ export function resolveBatchSuccess(
     .map((id) => state.entries[id])
     .filter(Boolean);
 
+  if (results.length === 0) {
+    for (const entry of inflightEntries) {
+      delete nextEntries[entry.clientId];
+    }
+  }
+
   for (let index = 0; index < results.length; index += 1) {
     const result = results[index];
     const byIndex = inflightEntries[index];

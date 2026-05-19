@@ -120,4 +120,21 @@ describe("sync reducer", () => {
     expect(state.dirtyOrder).toEqual([]);
     expect(state.syncState).toBe("idle");
   });
+
+  it("clears inflight entries when a batch has no executable operations", () => {
+    let state = createInitialSyncState("doc_1", "root_1", 3);
+    state = enqueueChange(state, {
+      clientId: "client_without_block",
+      blockId: null,
+      opType: "update",
+      payload: { type: "paragraph", content: [{ type: "text", text: "x" }] },
+    });
+    state = markBatchInflight(state, "batch_empty", ["client_without_block"], false);
+
+    state = resolveBatchSuccess(state, "batch_empty", []);
+
+    expect(state.entries.client_without_block).toBeUndefined();
+    expect(state.dirtyOrder).toEqual([]);
+    expect(state.syncState).toBe("idle");
+  });
 });
